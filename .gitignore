@@ -1,0 +1,4 @@
+*.o
+out
+out_*
+JLinkLog.txt
