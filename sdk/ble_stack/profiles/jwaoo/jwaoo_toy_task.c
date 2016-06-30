@@ -37,8 +37,8 @@
 
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
 static struct att_char_desc jwaoo_toy_tx_char = ATT_CHAR(ATT_CHAR_PROP_NTF, JWAOO_TOY_CHAR_TX, JWAOO_TOY_UUID_TX);
-static struct att_char_desc jwaoo_toy_rx_char = ATT_CHAR(ATT_CHAR_PROP_WR, JWAOO_TOY_CHAR_RX, JWAOO_TOY_UUID_RX);
-static struct att_char_desc jwaoo_toy_ota_char = ATT_CHAR(ATT_CHAR_PROP_WR, JWAOO_TOY_CHAR_OTA, JWAOO_TOY_UUID_OTA);
+static struct att_char_desc jwaoo_toy_rx_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_CHAR_RX, JWAOO_TOY_UUID_RX);
+static struct att_char_desc jwaoo_toy_ota_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_CHAR_OTA, JWAOO_TOY_UUID_OTA);
 
 const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 {
@@ -251,10 +251,11 @@ static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
 	println("length = %d", param->length);
 	uart2_nputs((const char *) param->value, param->length);
 	uart2_nputs("\r\n", 2);
+	println("response = %d", param->response);
 
 	if (param->response)
 	{
-		atts_write_rsp_send(jwaoo_toy_env.con_info.conidx, param->handle, PRF_ERR_OK);
+		atts_write_rsp_send(jwaoo_toy_env.con_info.conidx, param->handle, PRF_ERR_INVALID_PARAM);
 	}
 
     return (KE_MSG_CONSUMED);
