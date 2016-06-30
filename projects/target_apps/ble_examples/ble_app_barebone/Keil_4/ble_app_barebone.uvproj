@@ -424,11 +424,6 @@
           <GroupName>sdk_arch</GroupName>
           <Files>
             <File>
-              <FileName>arch_console.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\platform\core_modules\arch_console\arch_console.c</FilePath>
-            </File>
-            <File>
               <FileName>nvds.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\platform\core_modules\nvds\src\nvds.c</FilePath>
@@ -630,6 +625,11 @@
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\platform\driver\i2c_eeprom\i2c_eeprom.c</FilePath>
             </File>
+            <File>
+              <FileName>uart2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\platform\driver\uart\uart2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -661,19 +661,19 @@
           <GroupName>sdk_profiles</GroupName>
           <Files>
             <File>
-              <FileName>diss.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\dis\diss\diss.c</FilePath>
-            </File>
-            <File>
-              <FileName>diss_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\dis\diss\diss_task.c</FilePath>
-            </File>
-            <File>
               <FileName>prf_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\prf_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>jwaoo_toy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\ble_stack\profiles\jwaoo\jwaoo_toy.c</FilePath>
+            </File>
+            <File>
+              <FileName>jwaoo_toy_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\ble_stack\profiles\jwaoo\jwaoo_toy_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -794,6 +794,16 @@
               <FileName>app_customs_common.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_custs\app_customs_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_jwaoo_toy_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_jwaoo_toy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1442,11 +1452,6 @@
           <GroupName>sdk_arch</GroupName>
           <Files>
             <File>
-              <FileName>arch_console.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\platform\core_modules\arch_console\arch_console.c</FilePath>
-            </File>
-            <File>
               <FileName>nvds.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\platform\core_modules\nvds\src\nvds.c</FilePath>
@@ -1648,6 +1653,11 @@
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\platform\driver\i2c_eeprom\i2c_eeprom.c</FilePath>
             </File>
+            <File>
+              <FileName>uart2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\platform\driver\uart\uart2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1679,19 +1689,19 @@
           <GroupName>sdk_profiles</GroupName>
           <Files>
             <File>
-              <FileName>diss.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\dis\diss\diss.c</FilePath>
-            </File>
-            <File>
-              <FileName>diss_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\dis\diss\diss_task.c</FilePath>
-            </File>
-            <File>
               <FileName>prf_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\prf_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>jwaoo_toy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\ble_stack\profiles\jwaoo\jwaoo_toy.c</FilePath>
+            </File>
+            <File>
+              <FileName>jwaoo_toy_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\ble_stack\profiles\jwaoo\jwaoo_toy_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1812,6 +1822,16 @@
               <FileName>app_customs_common.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_custs\app_customs_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_jwaoo_toy_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_jwaoo_toy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2460,11 +2480,6 @@
           <GroupName>sdk_arch</GroupName>
           <Files>
             <File>
-              <FileName>arch_console.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\platform\core_modules\arch_console\arch_console.c</FilePath>
-            </File>
-            <File>
               <FileName>nvds.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\platform\core_modules\nvds\src\nvds.c</FilePath>
@@ -2666,6 +2681,11 @@
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\platform\driver\i2c_eeprom\i2c_eeprom.c</FilePath>
             </File>
+            <File>
+              <FileName>uart2.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\platform\driver\uart\uart2.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2697,19 +2717,19 @@
           <GroupName>sdk_profiles</GroupName>
           <Files>
             <File>
-              <FileName>diss.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\dis\diss\diss.c</FilePath>
-            </File>
-            <File>
-              <FileName>diss_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\dis\diss\diss_task.c</FilePath>
-            </File>
-            <File>
               <FileName>prf_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\ble_stack\profiles\prf_utils.c</FilePath>
+            </File>
+            <File>
+              <FileName>jwaoo_toy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\ble_stack\profiles\jwaoo\jwaoo_toy.c</FilePath>
+            </File>
+            <File>
+              <FileName>jwaoo_toy_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\ble_stack\profiles\jwaoo\jwaoo_toy_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2830,6 +2850,16 @@
               <FileName>app_customs_common.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_custs\app_customs_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_jwaoo_toy_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_jwaoo_toy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy.c</FilePath>
             </File>
           </Files>
         </Group>

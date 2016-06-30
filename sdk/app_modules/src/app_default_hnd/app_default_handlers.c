@@ -89,6 +89,10 @@ void default_app_on_init(void)
 #if BLE_DIS_SERVER        
     app_dis_init();
 #endif
+    
+#if BLE_JWAOO_TOY_SERVER        
+    app_jwaoo_toy_init();
+#endif
 
 #if BLE_SPOTA_RECEIVER
     app_spotar_init();

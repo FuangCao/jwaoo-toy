@@ -415,6 +415,7 @@ enum KE_TASK_TYPE
 
     TASK_CPPS           = 52  ,   // Cycling Power Profile Server Task
     TASK_CPPC           = 53  ,   // Cycling Power Profile Client Task
+    TASK_JWAOO_TOY      = 54  ,
     
     // Start of conditionally assigned task types
     
@@ -485,6 +486,10 @@ enum KE_TASK_TYPE
     #if BLE_CUSTOM1_SERVER
 	TASK_CUSTS1		    ,	// 1st Custom profile server
     #endif
+
+	#if BLE_JWAOO_TOY_SERVER
+	TASK_JWAOO_TOY_SERVER,
+	#endif
 
     // End of conditionally assigned task types
     

@@ -89,7 +89,11 @@ const struct prf_func_callbacks prf_funcs[] =
     #if BLE_DIS_SERVER
     {TASK_DISS,      app_diss_create_db, app_diss_enable},
     #endif
-    
+
+    #if BLE_JWAOO_TOY_SERVER
+    {TASK_JWAOO_TOY,      app_jwaoo_toy_create_db, app_jwaoo_toy_enable},
+    #endif
+
     #if BLE_SPOTA_RECEIVER
     {TASK_SPOTAR,    app_spotar_create_db, app_spotar_enable},
     #endif

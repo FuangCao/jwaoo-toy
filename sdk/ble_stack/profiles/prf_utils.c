@@ -69,6 +69,11 @@
 #include "disc_task.h"
 #endif // (BLE_DIS_CLIENT)
 
+#if (BLE_JWAOO_TOY_SERVER)
+#include "jwaoo_toy.h"
+#include "jwaoo_toy_task.h"
+#endif // (BLE_JWAOO_TOY_SERVER)
+
 #if (BLE_BP_SENSOR)
 #include "blps.h"
 #include "blps_task.h"
@@ -1365,7 +1370,10 @@ void prf_init_func(void)
     #endif // (BLE_SPOTA_RECEIVER)
     #if (BLE_DIS_SERVER)
     diss_init();
-    #endif // (BLE_DIS_SERVER)    
+    #endif // (BLE_DIS_SERVER) 
+    #if (BLE_JWAOO_TOY_SERVER)
+    jwaoo_toy_init();
+    #endif // (BLE_JWAOO_TOY_SERVER) 
     #if (BLE_FINDME_LOCATOR)
     findl_init();
     #endif // (BLE_FINDME_LOCATOR)
@@ -1802,6 +1810,12 @@ void prf_cleanup_func(uint8_t conidx, uint16_t conhdl, uint8_t reason)
         gapc_send_disconect_ind(conidx, reason, conhdl, TASK_DISS);
     }
     #endif // #BLE_DIS_SERVER
+    #if (BLE_JWAOO_TOY_SERVER)
+    if (ke_state_get(TASK_JWAOO_TOY) == JWAOO_TOY_CONNECTED)
+    {
+        gapc_send_disconect_ind(conidx, reason, conhdl, TASK_JWAOO_TOY);
+    }
+    #endif // #BLE_JWAOO_TOY_SERVER
     #if (BLE_PROX_REPORTER)
     if (ke_state_get(TASK_PROXR) == PROXR_CONNECTED)
     {

@@ -43,6 +43,11 @@ enum process_event_response app_dis_process_handler (ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id, 
                                          enum ke_msg_status_tag *msg_ret);
+enum process_event_response app_jwaoo_toy_process_handler (ke_msg_id_t const msgid,
+                                         void const *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id, 
+                                         enum ke_msg_status_tag *msg_ret);
 enum process_event_response app_proxr_process_handler (ke_msg_id_t const msgid,
                                          void const *param,
                                          ke_task_id_t const dest_id,
@@ -107,6 +112,10 @@ const process_event_func_t app_process_handlers[] = {
 
 #if ((BLE_DIS_SERVER) && (!EXCLUDE_DLG_DISS))
     (process_event_func_t) app_dis_process_handler,
+#endif
+
+#if ((BLE_JWAOO_TOY_SERVER) && (!EXCLUDE_DLG_JWAOO_TOY))
+    (process_event_func_t) app_jwaoo_toy_process_handler,
 #endif
 
 #if ((BLE_PROX_REPORTER) && (!EXCLUDE_DLG_PROXR))

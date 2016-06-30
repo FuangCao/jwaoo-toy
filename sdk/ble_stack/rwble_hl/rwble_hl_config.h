@@ -175,6 +175,7 @@
                               BLE_HT_THERMOM         +  \
                               BLE_DIS_CLIENT         +  \
                               BLE_DIS_SERVER         +  \
+                              BLE_JWAOO_TOY_SERVER   +  \
                               BLE_BP_COLLECTOR       +  \
                               BLE_BP_SENSOR          +  \
                               BLE_TIP_CLIENT         +  \

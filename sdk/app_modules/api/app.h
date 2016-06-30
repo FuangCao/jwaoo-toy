@@ -55,6 +55,11 @@
 #include "app_diss_task.h"
 #endif
 
+#if (BLE_JWAOO_TOY_SERVER)
+#include "app_jwaoo_toy.h"
+#include "app_jwaoo_toy_task.h"
+#endif
+
 #if (BLE_BAS_SERVER)
 #include "app_bass.h"
 #include "app_bass_task.h"
