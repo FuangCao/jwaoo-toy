@@ -25,6 +25,7 @@
 #include "rwip_config.h"
 
 #if (BLE_JWAOO_TOY_SERVER)
+#include "uart.h"
 #include "attm_util.h"
 #include "atts_util.h"
 #include "jwaoo_toy.h"
@@ -85,10 +86,28 @@ void jwaoo_toy_disable(uint16_t conhdl)
     ke_msg_send(ind);
 
     //Disable JWAOO_TOY in database
-    attmdb_svc_set_permission(jwaoo_toy_env.shdl, PERM(SVC, DISABLE));
+    attmdb_svc_set_permission(jwaoo_toy_env.handle, PERM(SVC, DISABLE));
 
     //Go to idle state
     ke_state_set(TASK_JWAOO_TOY, JWAOO_TOY_IDLE);
+}
+
+int jwaoo_toy_send_data(uint16_t attr, const uint8_t *data, int size)
+{
+	int ret;
+	uint16_t handle = jwaoo_toy_env.handle + attr;
+	static uint8_t buff[JWAOO_TOY_MAX_DATA_SIZE];
+
+	memcpy(buff, data, size);
+
+	ret = attmdb_att_set_value(handle, size, buff);
+	if (ret != ATT_ERR_NO_ERROR) {
+		return ret;
+	}
+
+	prf_server_send_event((prf_env_struct *) &jwaoo_toy_env, false, handle);
+
+	return 0;
 }
 
 #endif //BLE_JWAOO_TOY_SERVER

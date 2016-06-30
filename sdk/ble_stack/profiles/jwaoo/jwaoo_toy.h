@@ -78,9 +78,7 @@ struct jwaoo_toy_env_tag
     struct prf_con_info con_info;
 
     /// Service Start HandleVAL
-    uint16_t shdl;
-    /// Attribute Table
-    uint8_t att_tbl[JWAOO_TOY_CHAR_COUNT];
+    uint16_t handle;
 };
 
 /*
@@ -118,6 +116,12 @@ uint8_t jwaoo_toy_check_val_len(uint8_t char_code, uint8_t val_len);
  ****************************************************************************************
  */
 void jwaoo_toy_disable(uint16_t conhdl); 
+int jwaoo_toy_send_data(uint16_t attr, const uint8_t *data, int size);
+
+static inline int jwaoo_toy_send_tx_data(const uint8_t *data,int size)
+{
+	return jwaoo_toy_send_data(JWAOO_TOY_ATTR_TX_DATA, data, size);
+}
 
 #endif //BLE_JWAOO_TOY_SERVER
 

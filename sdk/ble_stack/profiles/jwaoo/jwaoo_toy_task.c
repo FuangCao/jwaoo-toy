@@ -112,11 +112,11 @@ static int jwaoo_toy_create_db_req_handler(ke_msg_id_t const msgid,
     //Save profile id
     jwaoo_toy_env.con_info.prf_id = TASK_JWAOO_TOY;
 
-	status = attm_svc_create_db(&jwaoo_toy_env.shdl, (uint8_t *) &cfg_flag, JWAOO_TOY_ATTR_COUNT, jwaoo_toy_env.att_tbl, dest_id, jwaoo_toy_att_db);
+	status = attm_svc_create_db(&jwaoo_toy_env.handle, (uint8_t *) &cfg_flag, JWAOO_TOY_ATTR_COUNT, NULL, dest_id, jwaoo_toy_att_db);
 	if (status == ATT_ERR_NO_ERROR)
     {
         //Disable service
-        status = attmdb_svc_set_permission(jwaoo_toy_env.shdl, PERM(SVC, DISABLE));
+        status = attmdb_svc_set_permission(jwaoo_toy_env.handle, PERM(SVC, DISABLE));
 
         //If we are here, database has been fulfilled with success, go to idle test
         ke_state_set(TASK_JWAOO_TOY, JWAOO_TOY_IDLE);
@@ -178,7 +178,7 @@ static int jwaoo_toy_enable_req_handler(ke_msg_id_t const msgid,
     else
     {
         //Enable Attributes + Set Security Level
-        attmdb_svc_set_permission(jwaoo_toy_env.shdl, param->sec_lvl);
+        attmdb_svc_set_permission(jwaoo_toy_env.handle, param->sec_lvl);
 
         // Go to connected state
         ke_state_set(TASK_JWAOO_TOY, JWAOO_TOY_CONNECTED);
@@ -247,15 +247,23 @@ static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
                                       ke_task_id_t const dest_id,
                                       ke_task_id_t const src_id)
 {
-	pr_pos_info();
-	println("length = %d", param->length);
-	uart2_nputs((const char *) param->value, param->length);
-	uart2_nputs("\r\n", 2);
-	println("response = %d", param->response);
+	int handle = param->handle - jwaoo_toy_env.handle;
+
+	switch (handle) {
+	case JWAOO_TOY_ATTR_RX_DATA:
+		uart2_nputs((const char *) param->value, param->length);
+		uart2_nputs("\r\n", 2);
+
+		jwaoo_toy_send_tx_data(param->value, param->length);
+		break;
+
+	case JWAOO_TOY_ATTR_OTA_DATA:
+		break;
+	}
 
 	if (param->response)
 	{
-		atts_write_rsp_send(jwaoo_toy_env.con_info.conidx, param->handle, PRF_ERR_INVALID_PARAM);
+		atts_write_rsp_send(jwaoo_toy_env.con_info.conidx, param->handle, PRF_ERR_OK);
 	}
 
     return (KE_MSG_CONSUMED);

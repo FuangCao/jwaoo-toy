@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Thu Jun 30 19:09:12 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Thu Jun 30 20:15:33 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -126,7 +126,6 @@ dummyf <= USED 0
 ;FILE nvds.o
 ;FILE prf_utils.o
 prf_pack_date_time <= USED 0
-prf_server_send_event <= USED 0
 prf_unpack_date_time <= USED 0
 ;FILE rf_580.o
 rf_nfm_disable <= USED 0
