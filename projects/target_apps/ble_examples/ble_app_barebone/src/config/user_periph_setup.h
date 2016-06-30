@@ -79,12 +79,6 @@
 #define RELAY_RESERVE		RESERVE_GPIO(RELAY, RELAY_GPIO_PORT, RELAY_GPIO_PIN, PID_GPIO);
 #define RELAY_CONFIG		GPIO_ConfigurePin(RELAY_GPIO_PORT, RELAY_GPIO_PIN, OUTPUT, PID_GPIO, true);
 
-#define println(fmt, args ...) \
-	uart2_printf(fmt "\r\n", ##args);
-
-#define pr_pos_info() \
-	println("%s[%d]", __FUNCTION__, __LINE__)
-
 /****************************************************************************************/
 /* i2c eeprom configuration                                                             */
 /****************************************************************************************/

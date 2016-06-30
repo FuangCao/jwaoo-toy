@@ -27,12 +27,71 @@
 
 #if (BLE_JWAOO_TOY_SERVER)
 #include "gap.h"
+#include "uart.h"
 #include "gattc_task.h"
 #include "jwaoo_toy.h"
 #include "jwaoo_toy_task.h"
 #include "prf_utils.h"
 #include "attm_util.h"
+#include "atts_util.h"
 
+static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
+static struct att_char_desc jwaoo_toy_tx_char = ATT_CHAR(ATT_CHAR_PROP_NTF, JWAOO_TOY_TX_CHAR, JWAOO_TOY_UUID_TX);
+static struct att_char_desc jwaoo_toy_rx_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_RX_CHAR, JWAOO_TOY_UUID_RX);
+static struct att_char_desc jwaoo_toy_ota_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_OTA_CHAR, JWAOO_TOY_UUID_OTA);
+
+const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_IDX_NB] =
+{
+	[JWAOO_TOY_IDX_SVC] = {
+		.uuid = ATT_DECL_PRIMARY_SERVICE,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_svc),
+		.length = sizeof(jwaoo_toy_svc),
+		.value = (uint8_t *) &jwaoo_toy_svc
+	},
+	[JWAOO_TOY_IDX_TX_CHAR] = {
+		.uuid = ATT_DECL_CHARACTERISTIC,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_tx_char),
+		.length = sizeof(jwaoo_toy_tx_char),
+		.value = (uint8_t *)& jwaoo_toy_tx_char
+	},
+	[JWAOO_TOY_IDX_TX_VAL] = {
+		.uuid = JWAOO_TOY_UUID_TX,
+		.perm = PERM(NTF, ENABLE),
+		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+	[JWAOO_TOY_IDX_RX_CHAR] = {
+		.uuid = ATT_DECL_CHARACTERISTIC,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_rx_char),
+		.length = sizeof(jwaoo_toy_rx_char),
+		.value = (uint8_t *)& jwaoo_toy_rx_char
+	},
+	[JWAOO_TOY_IDX_RX_VAL] = {
+		.uuid = JWAOO_TOY_UUID_RX,
+		.perm = PERM(WR, ENABLE),
+		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+	[JWAOO_TOY_IDX_OTA_CHAR] = {
+		.uuid = ATT_DECL_CHARACTERISTIC,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_ota_char),
+		.length = sizeof(jwaoo_toy_ota_char),
+		.value = (uint8_t *)& jwaoo_toy_ota_char
+	},
+	[JWAOO_TOY_IDX_OTA_VAL] = {
+		.uuid = JWAOO_TOY_UUID_OTA,
+		.perm = PERM(WR, ENABLE),
+		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+};
 
 /*
  * FUNCTION DEFINITIONS
@@ -45,16 +104,16 @@ static int jwaoo_toy_create_db_req_handler(ke_msg_id_t const msgid,
                                       ke_task_id_t const src_id)
 {
     struct jwaoo_toy_create_db_cfm *cfm;
-    //Service content flag
-    uint32_t cfg_flag = (1 << JWAOO_TOY_IDX_NB) - 1;
     //DB Creation Statis
     uint8_t status = ATT_ERR_NO_ERROR;
+	//Service content flag
+    uint32_t cfg_flag = (1 << JWAOO_TOY_IDX_NB) - 1;
 
     //Save profile id
     jwaoo_toy_env.con_info.prf_id = TASK_JWAOO_TOY;
 
-    status = attm_svc_create_db(&jwaoo_toy_env.shdl, (uint8_t *) &cfg_flag, JWAOO_TOY_IDX_NB, jwaoo_toy_env.att_tbl, dest_id, jwaoo_toy_att_db);
-    if (status == ATT_ERR_NO_ERROR)
+	status = attm_svc_create_db(&jwaoo_toy_env.shdl, (uint8_t *) &cfg_flag, JWAOO_TOY_IDX_NB, jwaoo_toy_env.att_tbl, dest_id, jwaoo_toy_att_db);
+	if (status == ATT_ERR_NO_ERROR)
     {
         //Disable service
         status = attmdb_svc_set_permission(jwaoo_toy_env.shdl, PERM(SVC, DISABLE));
@@ -151,6 +210,55 @@ static int gapc_disconnect_ind_handler(ke_msg_id_t const msgid,
     return (KE_MSG_CONSUMED);
 }
 
+/**
+ ****************************************************************************************
+ * @brief Handles reception of the @ref gattc_cmp_evt message.
+ * The handler enables the Serial Port Service Device profile.
+ * @param[in] msgid Id of the message received .
+ * @param[in] param Pointer to the parameters of the message.
+ * @param[in] dest_id ID of the receiving task instance 
+ * @param[in] src_id ID of the sending task instance.
+ * @return If the message was consumed or not.
+ ****************************************************************************************
+ */
+static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
+                                struct gattc_cmp_evt const *param,
+                                ke_task_id_t const dest_id,
+                                ke_task_id_t const src_id)
+{
+	pr_pos_info();
+
+    return (KE_MSG_CONSUMED);
+}
+
+/**
+ ****************************************************************************************
+ * @brief Handles reception of the @ref GATT_WRITE_CMD_IND message.
+ * Receive and proces incoming data 
+ * @param[in] msgid Id of the message received (probably unused).
+ * @param[in] param Pointer to the parameters of the message.
+ * @param[in] dest_id ID of the receiving task instance (probably unused).
+ * @param[in] src_id ID of the sending task instance.
+ * @return If the message was consumed or not.
+ ****************************************************************************************
+ */
+static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
+                                      struct gattc_write_cmd_ind const *param,
+                                      ke_task_id_t const dest_id,
+                                      ke_task_id_t const src_id)
+{
+	pr_pos_info();
+	println("length = %d", param->length);
+	uart2_nputs((const char *) param->value, param->length);
+	uart2_nputs("\r\n", 2);
+
+	if (param->response)
+	{
+		atts_write_rsp_send(jwaoo_toy_env.con_info.conidx, param->handle, PRF_ERR_OK);
+	}
+
+    return (KE_MSG_CONSUMED);
+}
 
 /*
  * GLOBAL VARIABLE DEFINITIONS
@@ -170,10 +278,11 @@ const struct ke_msg_handler jwaoo_toy_idle[] =
     { JWAOO_TOY_ENABLE_REQ,			(ke_msg_func_t) jwaoo_toy_enable_req_handler },
 };
 
-/// Default State handlers definition
-const struct ke_msg_handler jwaoo_toy_default_state[] =
+const struct ke_msg_handler jwaoo_toy_connected[] =
 {
-    { GAPC_DISCONNECT_IND,			(ke_msg_func_t) gapc_disconnect_ind_handler },
+    {GAPC_DISCONNECT_IND,			(ke_msg_func_t) gapc_disconnect_ind_handler},
+    {GATTC_CMP_EVT,					(ke_msg_func_t) gattc_cmp_evt_handler},
+    {GATTC_WRITE_CMD_IND,			(ke_msg_func_t) gattc_write_cmd_ind_handler},
 };
 
 ///Specifies the message handler structure for every input state.
@@ -181,11 +290,11 @@ const struct ke_state_handler jwaoo_toy_state_handler[JWAOO_TOY_STATE_MAX] =
 {
     [JWAOO_TOY_DISABLED]			= KE_STATE_HANDLER(jwaoo_toy_disabled),
     [JWAOO_TOY_IDLE]				= KE_STATE_HANDLER(jwaoo_toy_idle),
-    [JWAOO_TOY_CONNECTED]			= KE_STATE_HANDLER_NONE,
+    [JWAOO_TOY_CONNECTED]			= KE_STATE_HANDLER(jwaoo_toy_connected),
 };
 
 ///Specifies the message handlers that are common to all states.
-const struct ke_state_handler jwaoo_toy_default_handler = KE_STATE_HANDLER(jwaoo_toy_default_state);
+const struct ke_state_handler jwaoo_toy_default_handler = KE_STATE_HANDLER_NONE;
 
 ///Defines the place holder for the states of all the task instances.
 ke_state_t jwaoo_toy_state[JWAOO_TOY_IDX_MAX] __attribute__((section("retention_mem_area0"),zero_init)); //@RETENTION MEMORY

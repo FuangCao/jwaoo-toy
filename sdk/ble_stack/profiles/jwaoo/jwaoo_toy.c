@@ -30,6 +30,7 @@
 #include "jwaoo_toy.h"
 #include "jwaoo_toy_task.h"
 #include "prf_utils.h"
+#include "attm_db_128.h"
 
 /*
  * MACROS
@@ -40,65 +41,6 @@
  * JWAOO_TOY ATTRIBUTES
  ****************************************************************************************
  */
-
-static const att_svc_desc_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
-static const struct att_char_desc jwaoo_toy_rx_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_RX_CHAR, JWAOO_TOY_UUID_RX);
-static const struct att_char_desc jwaoo_toy_tx_char = ATT_CHAR(ATT_CHAR_PROP_NTF, JWAOO_TOY_TX_CHAR, JWAOO_TOY_UUID_TX);
-static const struct att_char_desc jwaoo_toy_ota_char = ATT_CHAR(ATT_CHAR_PROP_WR, JWAOO_TOY_OTA_CHAR, JWAOO_TOY_UUID_OTA);
-
-/// Full JWAOO_TOY Database Description - Used to add attributes into the database
-const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_IDX_NB] =
-{
-	[JWAOO_TOY_IDX_SVC] = {
-		.uuid = ATT_DECL_PRIMARY_SERVICE,
-		.perm = PERM(RD, ENABLE),
-		.max_length = sizeof(jwaoo_toy_svc),
-		.length = sizeof(jwaoo_toy_svc),
-		.value = (uint8_t *) &jwaoo_toy_svc
-	},
-	[JWAOO_TOY_IDX_TX_CHAR] = {
-		.uuid = ATT_DECL_CHARACTERISTIC,
-		.perm = PERM(RD, ENABLE),
-		.max_length = sizeof(jwaoo_toy_tx_char),
-		.length = sizeof(jwaoo_toy_tx_char),
-		.value = (uint8_t *)& jwaoo_toy_tx_char
-	},
-	[JWAOO_TOY_IDX_TX_VAL] = {
-		.uuid = JWAOO_TOY_UUID_TX,
-		.perm = PERM(NTF, ENABLE),
-		.max_length = JWAOO_TOY_VAL_MAX_LEN,
-		.length = 0,
-		.value = NULL
-	},
-	[JWAOO_TOY_IDX_RX_CHAR] = {
-		.uuid = ATT_DECL_CHARACTERISTIC,
-		.perm = PERM(RD, ENABLE),
-		.max_length = sizeof(jwaoo_toy_rx_char),
-		.length = sizeof(jwaoo_toy_rx_char),
-		.value = (uint8_t *)& jwaoo_toy_rx_char
-	},
-	[JWAOO_TOY_IDX_RX_VAL] = {
-		.uuid = JWAOO_TOY_UUID_RX,
-		.perm = PERM(WR, ENABLE),
-		.max_length = JWAOO_TOY_VAL_MAX_LEN,
-		.length = 0,
-		.value = NULL
-	},
-	[JWAOO_TOY_IDX_OTA_CHAR] = {
-		.uuid = ATT_DECL_CHARACTERISTIC,
-		.perm = PERM(RD, ENABLE),
-		.max_length = sizeof(jwaoo_toy_ota_char),
-		.length = sizeof(jwaoo_toy_ota_char),
-		.value = (uint8_t *)& jwaoo_toy_ota_char
-	},
-	[JWAOO_TOY_IDX_OTA_VAL] = {
-		.uuid = JWAOO_TOY_UUID_OTA,
-		.perm = PERM(WR, ENABLE),
-		.max_length = JWAOO_TOY_VAL_MAX_LEN,
-		.length = 0,
-		.value = NULL
-	},
-};
 
 /*
  * GLOBAL VARIABLE DEFINITIONS

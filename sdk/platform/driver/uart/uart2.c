@@ -402,6 +402,12 @@ void uart2_write(uint8_t *bufptr, uint32_t size,void (*callback) (uint8_t))
     }
 }
 
+void uart2_nputs(const char *text, int length)
+{
+	uart2_write((uint8_t *) text, length, NULL);
+	uart2_finish_transfers();
+}
+
 void uart2_printf(const char *fmt, ...)
 {
 	va_list ap;
@@ -412,8 +418,7 @@ void uart2_printf(const char *fmt, ...)
 	length = vsnprintf(buff, sizeof(buff), fmt, ap);
 	va_end(ap);
 
-	uart2_write((uint8_t *) buff, length, NULL);
-	uart2_finish_transfers();
+	uart2_nputs(buff, length);
 }
 
 void UART2_Handler(void)

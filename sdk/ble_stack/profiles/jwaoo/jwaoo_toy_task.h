@@ -38,7 +38,8 @@
  ****************************************************************************************
  */
 
-#define JWAOO_TOY_IDX_MAX        (1)
+#define JWAOO_TOY_IDX_MAX			1
+#define JWAOO_TOY_MAX_DATA_SIZE		20
 
 enum
 {

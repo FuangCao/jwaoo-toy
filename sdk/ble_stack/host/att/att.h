@@ -58,7 +58,7 @@
 /// macro to fill an attribute characteristic
 #define ATT_CHAR128(prop, handle, type) {(prop),                                         \
                                          {(uint8_t)(handle), (uint8_t)(handle >> 8)}, \
-                                         (type) };
+                                         type };
 
 
 /// macro to fill characteristic format

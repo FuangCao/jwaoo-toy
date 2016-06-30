@@ -41,41 +41,36 @@
  ****************************************************************************************
  */
 
-/// Maximal length for Characteristic values - 18
-#define JWAOO_TOY_VAL_MAX_LEN                         (160)
-
 /*
  * ENUMERATIONS
  ****************************************************************************************
  */
 
+enum
+{
+	JWAOO_TOY_IDX_SVC,
+
+	JWAOO_TOY_IDX_TX_CHAR,
+	JWAOO_TOY_IDX_TX_VAL,
+
+	JWAOO_TOY_IDX_RX_CHAR,
+	JWAOO_TOY_IDX_RX_VAL,
+
+	JWAOO_TOY_IDX_OTA_CHAR,
+	JWAOO_TOY_IDX_OTA_VAL,
+
+	JWAOO_TOY_IDX_COUNT,
+};
+
+enum
+{
+	JWAOO_TOY_TX_CHAR,
+	JWAOO_TOY_RX_CHAR,
+	JWAOO_TOY_OTA_CHAR,
+	JWAOO_TOY_CHAR_COUNT,
+};
+
 ///Attributes State Machine
-enum
-{
-    JWAOO_TOY_IDX_SVC,
-
-    JWAOO_TOY_IDX_RX_CHAR,
-    JWAOO_TOY_IDX_RX_VAL,
-
-    JWAOO_TOY_IDX_TX_CHAR,
-    JWAOO_TOY_IDX_TX_VAL,
-
-    JWAOO_TOY_IDX_OTA_CHAR,
-    JWAOO_TOY_IDX_OTA_VAL,
-
-    JWAOO_TOY_IDX_NB,
-};
-
-///Attribute Table Indexes
-enum
-{
-    JWAOO_TOY_RX_CHAR,
-    JWAOO_TOY_TX_CHAR,
-    JWAOO_TOY_OTA_CHAR,
-
-    JWAOO_TOY_CHAR_MAX,
-};
-
 ///Device Information Service Server Environment Variable
 struct jwaoo_toy_env_tag
 {
@@ -85,7 +80,7 @@ struct jwaoo_toy_env_tag
     /// Service Start HandleVAL
     uint16_t shdl;
     /// Attribute Table
-    uint8_t att_tbl[JWAOO_TOY_CHAR_MAX];
+    uint8_t att_tbl[JWAOO_TOY_CHAR_COUNT];
 };
 
 /*
@@ -94,7 +89,6 @@ struct jwaoo_toy_env_tag
  */
 
 extern struct jwaoo_toy_env_tag jwaoo_toy_env;
-extern const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_IDX_NB];
 
 /*
  * FUNCTION DECLARATIONS

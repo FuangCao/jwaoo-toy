@@ -73,6 +73,11 @@
 #define UART_CHAR_DURATION       (UART_BAUDRATE * 22)
 #endif // (UART_BAUDRATE == UART_BAUDRATE_921K6)
 
+#define println(fmt, args ...) \
+	uart2_printf(fmt "\r\n", ##args);
+
+#define pr_pos_info() \
+	println("%s[%d]", __FUNCTION__, __LINE__)
 
 /*
  * ENUMERATION DEFINITIONS
@@ -285,7 +290,7 @@ void uart2_finish_transfers_func(void);
 void uart2_read_func(uint8_t *bufptr, uint32_t size,void (*callback) (uint8_t));
 void uart2_write_func(uint8_t *bufptr, uint32_t size,void (*callback) (uint8_t));\
 void UART2_Handler_func(void);
-
+void uart2_nputs(const char *text, int length);
 void uart2_printf(const char *fmt, ...);
 
 /**
@@ -295,6 +300,11 @@ void uart2_printf(const char *fmt, ...);
  *****************************************************************************************
  */
 void uart_isr(void);
+
+static inline void uart2_puts(const char *text)
+{
+	uart2_nputs(text, strlen(text));
+}
 
 /// @} UART
 
