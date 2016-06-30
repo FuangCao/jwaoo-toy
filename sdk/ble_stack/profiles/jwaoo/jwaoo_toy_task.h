@@ -38,7 +38,7 @@
  ****************************************************************************************
  */
 
-#define JWAOO_TOY_IDX_MAX			1
+#define JWAOO_TOY_TASK_COUNT		1
 #define JWAOO_TOY_MAX_DATA_SIZE		20
 
 enum
@@ -61,7 +61,7 @@ enum
     JWAOO_TOY_CONNECTED,
 
     ///Number of defined states.
-    JWAOO_TOY_STATE_MAX
+    JWAOO_TOY_STATE_COUNT
 };
 
 /// Messages for Device Information Service Server
@@ -136,9 +136,9 @@ struct jwaoo_toy_disable_ind
  * TASK DESCRIPTOR DECLARATIONS
  ****************************************************************************************
  */
-extern const struct ke_state_handler jwaoo_toy_state_handler[JWAOO_TOY_STATE_MAX];
+extern const struct ke_state_handler jwaoo_toy_state_handler[JWAOO_TOY_STATE_COUNT];
 extern const struct ke_state_handler jwaoo_toy_default_handler;
-extern ke_state_t jwaoo_toy_state[JWAOO_TOY_IDX_MAX];
+extern ke_state_t jwaoo_toy_state[JWAOO_TOY_TASK_COUNT];
 
 #endif //BLE_JWAOO_TOY_SERVER
 

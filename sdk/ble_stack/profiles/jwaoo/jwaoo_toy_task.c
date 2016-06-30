@@ -36,55 +36,55 @@
 #include "atts_util.h"
 
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
-static struct att_char_desc jwaoo_toy_tx_char = ATT_CHAR(ATT_CHAR_PROP_NTF, JWAOO_TOY_TX_CHAR, JWAOO_TOY_UUID_TX);
-static struct att_char_desc jwaoo_toy_rx_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_RX_CHAR, JWAOO_TOY_UUID_RX);
-static struct att_char_desc jwaoo_toy_ota_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_OTA_CHAR, JWAOO_TOY_UUID_OTA);
+static struct att_char_desc jwaoo_toy_tx_char = ATT_CHAR(ATT_CHAR_PROP_NTF, JWAOO_TOY_CHAR_TX, JWAOO_TOY_UUID_TX);
+static struct att_char_desc jwaoo_toy_rx_char = ATT_CHAR(ATT_CHAR_PROP_WR, JWAOO_TOY_CHAR_RX, JWAOO_TOY_UUID_RX);
+static struct att_char_desc jwaoo_toy_ota_char = ATT_CHAR(ATT_CHAR_PROP_WR, JWAOO_TOY_CHAR_OTA, JWAOO_TOY_UUID_OTA);
 
-const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_IDX_NB] =
+const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 {
-	[JWAOO_TOY_IDX_SVC] = {
+	[JWAOO_TOY_ATTR_SVC] = {
 		.uuid = ATT_DECL_PRIMARY_SERVICE,
 		.perm = PERM(RD, ENABLE),
 		.max_length = sizeof(jwaoo_toy_svc),
 		.length = sizeof(jwaoo_toy_svc),
 		.value = (uint8_t *) &jwaoo_toy_svc
 	},
-	[JWAOO_TOY_IDX_TX_CHAR] = {
+	[JWAOO_TOY_ATTR_TX_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
 		.max_length = sizeof(jwaoo_toy_tx_char),
 		.length = sizeof(jwaoo_toy_tx_char),
 		.value = (uint8_t *)& jwaoo_toy_tx_char
 	},
-	[JWAOO_TOY_IDX_TX_VAL] = {
+	[JWAOO_TOY_ATTR_TX_DATA] = {
 		.uuid = JWAOO_TOY_UUID_TX,
 		.perm = PERM(NTF, ENABLE),
 		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
 		.length = 0,
 		.value = NULL
 	},
-	[JWAOO_TOY_IDX_RX_CHAR] = {
+	[JWAOO_TOY_ATTR_RX_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
 		.max_length = sizeof(jwaoo_toy_rx_char),
 		.length = sizeof(jwaoo_toy_rx_char),
 		.value = (uint8_t *)& jwaoo_toy_rx_char
 	},
-	[JWAOO_TOY_IDX_RX_VAL] = {
+	[JWAOO_TOY_ATTR_RX_DATA] = {
 		.uuid = JWAOO_TOY_UUID_RX,
 		.perm = PERM(WR, ENABLE),
 		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
 		.length = 0,
 		.value = NULL
 	},
-	[JWAOO_TOY_IDX_OTA_CHAR] = {
+	[JWAOO_TOY_ATTR_OTA_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
 		.max_length = sizeof(jwaoo_toy_ota_char),
 		.length = sizeof(jwaoo_toy_ota_char),
 		.value = (uint8_t *)& jwaoo_toy_ota_char
 	},
-	[JWAOO_TOY_IDX_OTA_VAL] = {
+	[JWAOO_TOY_ATTR_OTA_DATA] = {
 		.uuid = JWAOO_TOY_UUID_OTA,
 		.perm = PERM(WR, ENABLE),
 		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
@@ -107,12 +107,12 @@ static int jwaoo_toy_create_db_req_handler(ke_msg_id_t const msgid,
     //DB Creation Statis
     uint8_t status = ATT_ERR_NO_ERROR;
 	//Service content flag
-    uint32_t cfg_flag = (1 << JWAOO_TOY_IDX_NB) - 1;
+    uint32_t cfg_flag = (1 << JWAOO_TOY_ATTR_COUNT) - 1;
 
     //Save profile id
     jwaoo_toy_env.con_info.prf_id = TASK_JWAOO_TOY;
 
-	status = attm_svc_create_db(&jwaoo_toy_env.shdl, (uint8_t *) &cfg_flag, JWAOO_TOY_IDX_NB, jwaoo_toy_env.att_tbl, dest_id, jwaoo_toy_att_db);
+	status = attm_svc_create_db(&jwaoo_toy_env.shdl, (uint8_t *) &cfg_flag, JWAOO_TOY_ATTR_COUNT, jwaoo_toy_env.att_tbl, dest_id, jwaoo_toy_att_db);
 	if (status == ATT_ERR_NO_ERROR)
     {
         //Disable service
@@ -286,7 +286,7 @@ const struct ke_msg_handler jwaoo_toy_connected[] =
 };
 
 ///Specifies the message handler structure for every input state.
-const struct ke_state_handler jwaoo_toy_state_handler[JWAOO_TOY_STATE_MAX] =
+const struct ke_state_handler jwaoo_toy_state_handler[JWAOO_TOY_STATE_COUNT] =
 {
     [JWAOO_TOY_DISABLED]			= KE_STATE_HANDLER(jwaoo_toy_disabled),
     [JWAOO_TOY_IDLE]				= KE_STATE_HANDLER(jwaoo_toy_idle),
@@ -297,7 +297,7 @@ const struct ke_state_handler jwaoo_toy_state_handler[JWAOO_TOY_STATE_MAX] =
 const struct ke_state_handler jwaoo_toy_default_handler = KE_STATE_HANDLER_NONE;
 
 ///Defines the place holder for the states of all the task instances.
-ke_state_t jwaoo_toy_state[JWAOO_TOY_IDX_MAX] __attribute__((section("retention_mem_area0"),zero_init)); //@RETENTION MEMORY
+ke_state_t jwaoo_toy_state[JWAOO_TOY_TASK_COUNT] __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
 
 #endif //BLE_JWAOO_TOY_SERVER
 

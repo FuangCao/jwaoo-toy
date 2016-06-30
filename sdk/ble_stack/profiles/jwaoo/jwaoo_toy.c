@@ -47,14 +47,14 @@
  ****************************************************************************************
  */
 
-struct jwaoo_toy_env_tag jwaoo_toy_env __attribute__((section("retention_mem_area0"),zero_init)); //@RETENTION MEMORY
+struct jwaoo_toy_env_tag jwaoo_toy_env __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
 
 static const struct ke_task_desc TASK_DESC_JWAOO_TOY = {
 	.state_handler = jwaoo_toy_state_handler,
 	.default_handler = &jwaoo_toy_default_handler,
 	.state = jwaoo_toy_state,
-	.state_max = JWAOO_TOY_STATE_MAX,
-	.idx_max = JWAOO_TOY_IDX_MAX
+	.state_max = JWAOO_TOY_STATE_COUNT,
+	.idx_max = JWAOO_TOY_TASK_COUNT
 };
 
 /*
