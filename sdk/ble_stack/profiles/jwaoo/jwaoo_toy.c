@@ -32,6 +32,8 @@
 #include "jwaoo_toy.h"
 #include "jwaoo_toy_task.h"
 #include "prf_utils.h"
+#include "app_easy_timer.h"
+#include "MPU6050.h"
 
 /*
  * MACROS
@@ -58,21 +60,64 @@ static const struct ke_task_desc TASK_DESC_JWAOO_TOY = {
 	.idx_max = JWAOO_TOY_TASK_COUNT
 };
 
+extern uint32_t spi_flash_size;
+
+static timer_hnd app_sensor_timer_id = EASY_TIMER_INVALID_TIMER;
+
 /*
  * FUNCTION DEFINITIONS
  ****************************************************************************************
  */
+
+static void jwaoo_toy_sensor_poll_timer(void)
+{
+	uint8_t buff[14];
+
+	MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, sizeof(buff));
+	jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, sizeof(buff));
+
+	app_sensor_timer_id = app_easy_timer(jwaoo_toy_env.sensor_poll_delay, jwaoo_toy_sensor_poll_timer);
+}
+
+static bool jwaoo_toy_sensor_set_enable(bool enable)
+{
+	println("sensor_enable = %d", enable);
+
+	if (enable) {
+		if (app_sensor_timer_id == EASY_TIMER_INVALID_TIMER) {
+			app_sensor_timer_id = app_easy_timer(jwaoo_toy_env.sensor_poll_delay, jwaoo_toy_sensor_poll_timer);
+		}
+
+		return (app_sensor_timer_id != EASY_TIMER_INVALID_TIMER);
+	} else {
+		if (app_sensor_timer_id != EASY_TIMER_INVALID_TIMER) {
+			app_easy_timer_cancel(app_sensor_timer_id);
+			app_sensor_timer_id = EASY_TIMER_INVALID_TIMER;
+		}
+
+		return true;
+	}
+}
 
 void jwaoo_toy_init(void)
 {
     // Reset environment
     memset(&jwaoo_toy_env, 0, sizeof(jwaoo_toy_env));
 
+	jwaoo_toy_env.sensor_poll_delay = 20;
+
     // Create JWAOO_TOY task
     ke_task_create(TASK_JWAOO_TOY, &TASK_DESC_JWAOO_TOY);
 
     // Set task in disabled state
     ke_state_set(TASK_JWAOO_TOY, JWAOO_TOY_DISABLED);
+}
+
+void jwaoo_toy_enable(uint16_t conhdl) 
+{
+	if (jwaoo_toy_env.sensor_enable) {
+		jwaoo_toy_sensor_set_enable(true);
+	}
 }
 
 void jwaoo_toy_disable(uint16_t conhdl) 
@@ -87,6 +132,7 @@ void jwaoo_toy_disable(uint16_t conhdl)
 
 	jwaoo_toy_env.flash_write_enable = false;
 	jwaoo_toy_env.flash_write_ok = false;
+	jwaoo_toy_sensor_set_enable(false);
 
     //Disable JWAOO_TOY in database
     attmdb_svc_set_permission(jwaoo_toy_env.handle, PERM(SVC, DISABLE));
@@ -94,6 +140,8 @@ void jwaoo_toy_disable(uint16_t conhdl)
     //Go to idle state
     ke_state_set(TASK_JWAOO_TOY, JWAOO_TOY_IDLE);
 }
+
+// ===============================================================================
 
 uint8_t jwaoo_toy_write_data(uint16_t attr, const uint8_t *data, int size)
 {
@@ -150,7 +198,7 @@ uint8_t jwaoo_toy_send_command_data(uint8_t type, const uint8_t *data, int size)
 	return jwaoo_toy_send_command(buff, sizeof(buff));
 }
 
-extern uint32_t spi_flash_size;
+// ===============================================================================
 
 void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 {
@@ -180,6 +228,9 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		if (address < spi_flash_size) {
 			uint8_t buff[JWAOO_TOY_MAX_DATA_SIZE];
 			int length = spi_flash_size - address;
+			if (length > JWAOO_TOY_MAX_DATA_SIZE) {
+				length = JWAOO_TOY_MAX_DATA_SIZE;
+			}
 
 			length = spi_flash_read_data(buff, address, length);
 			if (length > 0) {
@@ -204,9 +255,25 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		break;
 
 	case JWAOO_TOY_CMD_SENSOR_ENABLE:
+		if (command->bytes[0]) {
+			success = jwaoo_toy_sensor_set_enable(true);
+			jwaoo_toy_env.sensor_enable = success;
+		} else {
+			success = jwaoo_toy_sensor_set_enable(false);
+			jwaoo_toy_env.sensor_enable = false;
+		}
 		break;
 
-	case JWAOO_TOY_CMD_SENSOR_SET_DELAY:
+	case JWAOO_TOY_CMD_SENSOR_SET_DELAY: {
+		uint32_t delay = ((const struct jwaoo_toy_command_u32 *) command)->value / 10;
+		if (delay > 0) {
+			jwaoo_toy_env.sensor_poll_delay = delay;
+			success = true;
+		}
+	}
+	break;
+
+	default:
 		break;
 	}
 

@@ -182,6 +182,7 @@ static int jwaoo_toy_enable_req_handler(ke_msg_id_t const msgid,
 
         // Go to connected state
         ke_state_set(TASK_JWAOO_TOY, JWAOO_TOY_CONNECTED);
+        jwaoo_toy_enable(param->conhdl);
     }
 
     return (KE_MSG_CONSUMED);
@@ -226,8 +227,6 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
                                 ke_task_id_t const dest_id,
                                 ke_task_id_t const src_id)
 {
-	pr_pos_info();
-
     return (KE_MSG_CONSUMED);
 }
 

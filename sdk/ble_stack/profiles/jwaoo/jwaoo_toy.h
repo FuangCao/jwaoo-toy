@@ -121,6 +121,9 @@ struct jwaoo_toy_env_tag
 	bool flash_write_ok;
 	bool flash_write_enable;
 	uint32_t flash_write_address;
+
+	bool sensor_enable;
+	uint16_t sensor_poll_delay;
 };
 
 /*
@@ -157,6 +160,7 @@ uint8_t jwaoo_toy_check_val_len(uint8_t char_code, uint8_t val_len);
  * @brief Disable actions grouped in getting back to IDLE and sending configuration to requester task
  ****************************************************************************************
  */
+void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
 uint8_t jwaoo_toy_write_data(uint16_t attr, const uint8_t *data, int size);
 uint8_t jwaoo_toy_send_notify(uint16_t attr, const uint8_t *data, int size);

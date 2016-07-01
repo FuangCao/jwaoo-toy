@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 01 19:42:32 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 01 21:16:08 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -108,29 +108,37 @@ GPIO_RegisterCallback <= USED 0
 GPIO_SetIRQInputLevel <= USED 0
 ;FILE hardfault_handler.o
 ;FILE i2c_eeprom.o
-i2c_eeprom_init <= USED 0
 i2c_eeprom_read_byte <= USED 0
-i2c_eeprom_read_data <= USED 0
 i2c_eeprom_release <= USED 0
-i2c_eeprom_write_byte <= USED 0
 i2c_eeprom_write_data <= USED 0
 i2c_eeprom_write_page <= USED 0
-i2c_send_address <= USED 0
-i2c_wait_until_eeprom_ready <= USED 0
 ;FILE jump_table.o
 dummyf <= USED 0
 ;FILE jwaoo_toy.o
 jwaoo_toy_send_command_data <= USED 0
 jwaoo_toy_send_command_u16 <= USED 0
 jwaoo_toy_send_command_u32 <= USED 0
-jwaoo_toy_send_notify <= USED 0
 ;FILE ke_task.obj
 ;FILE llc.obj
+;FILE mpu6050.o
+MPU6050ReadTempRaw <= USED 0
+MPU6050_Calibration <= USED 0
+MPU6050_DeInitialize <= USED 0
+MPU6050_DumpAccelGyroTemperature <= USED 0
+MPU6050_DumpCalibratedAccelGyro <= USED 0
+MPU6050_DumpCalibratedAccelGyro2 <= USED 0
+MPU6050_GetFullScaleAccelRange <= USED 0
+MPU6050_GetFullScaleGyroRange <= USED 0
+MPU6050_GetRawAccelGyro <= USED 0
+MPU6050_GetSleepModeStatus <= USED 0
+MPU6050_ReadBit <= USED 0
+MPU6050_ReadTemp <= USED 0
+MPU6050_TestConnection <= USED 0
+MPU6050_TestDumpRawAccelGyro <= USED 0
 ;FILE nmi_handler.o
 ;FILE nvds.o
 ;FILE prf_utils.o
 prf_pack_date_time <= USED 0
-prf_server_send_event <= USED 0
 prf_unpack_date_time <= USED 0
 ;FILE rf_580.o
 rf_nfm_disable <= USED 0

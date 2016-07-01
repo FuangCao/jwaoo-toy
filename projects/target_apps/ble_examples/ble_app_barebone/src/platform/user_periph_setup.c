@@ -26,6 +26,7 @@
 #include "gpio.h"
 #include "uart.h"                    // UART initialization
 #include "spi_flash.h"
+#include "MPU6050.h"
 
 #if DEVELOPMENT_DEBUG
 
@@ -129,6 +130,8 @@ void periph_init(void)
 #endif
 
 	app_spi_flash_init();
+	MPU6050_Initialize();
+	MPU6050_GetDeviceID();
 
    // Enable the pads
     SetBits16(SYS_CTRL_REG, PAD_LATCH_EN, 1);
