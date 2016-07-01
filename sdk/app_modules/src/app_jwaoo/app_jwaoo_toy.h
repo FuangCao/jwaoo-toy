@@ -80,7 +80,6 @@ void app_jwaoo_toy_create_db(void);
  ****************************************************************************************
  */
 void app_jwaoo_toy_enable(uint16_t conhdl);
-
 #endif // (BLE_JWAOO_TOY_SERVER)
 
 /// @} APP

@@ -36,9 +36,9 @@
 #include "atts_util.h"
 
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
-static struct att_char_desc jwaoo_toy_tx_char = ATT_CHAR(ATT_CHAR_PROP_NTF, JWAOO_TOY_CHAR_TX, JWAOO_TOY_UUID_TX);
-static struct att_char_desc jwaoo_toy_rx_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_CHAR_RX, JWAOO_TOY_UUID_RX);
-static struct att_char_desc jwaoo_toy_ota_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP, JWAOO_TOY_CHAR_OTA, JWAOO_TOY_UUID_OTA);
+static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_COMMAND);
+static struct att_char_desc jwaoo_toy_flash_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_FLASH);
+static struct att_char_desc jwaoo_toy_sensor_char = ATT_CHAR(ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_SENSOR);
 
 const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 {
@@ -49,44 +49,44 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.length = sizeof(jwaoo_toy_svc),
 		.value = (uint8_t *) &jwaoo_toy_svc
 	},
-	[JWAOO_TOY_ATTR_TX_CHAR] = {
+	[JWAOO_TOY_ATTR_COMMAND_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
-		.max_length = sizeof(jwaoo_toy_tx_char),
-		.length = sizeof(jwaoo_toy_tx_char),
-		.value = (uint8_t *)& jwaoo_toy_tx_char
+		.max_length = sizeof(jwaoo_toy_command_char),
+		.length = sizeof(jwaoo_toy_command_char),
+		.value = (uint8_t *) &jwaoo_toy_command_char
 	},
-	[JWAOO_TOY_ATTR_TX_DATA] = {
-		.uuid = JWAOO_TOY_UUID_TX,
+	[JWAOO_TOY_ATTR_COMMAND_DATA] = {
+		.uuid = JWAOO_TOY_UUID_COMMAND,
+		.perm = PERM(WR, ENABLE) | PERM(RD, ENABLE),
+		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+	[JWAOO_TOY_ATTR_FLASH_CHAR] = {
+		.uuid = ATT_DECL_CHARACTERISTIC,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_flash_char),
+		.length = sizeof(jwaoo_toy_flash_char),
+		.value = (uint8_t *)& jwaoo_toy_flash_char
+	},
+	[JWAOO_TOY_ATTR_FLASH_DATA] = {
+		.uuid = JWAOO_TOY_UUID_FLASH,
+		.perm = PERM(WR, ENABLE) | PERM(RD, ENABLE),
+		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+	[JWAOO_TOY_ATTR_SENSOR_CHAR] = {
+		.uuid = ATT_DECL_CHARACTERISTIC,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_sensor_char),
+		.length = sizeof(jwaoo_toy_sensor_char),
+		.value = (uint8_t *)& jwaoo_toy_sensor_char
+	},
+	[JWAOO_TOY_ATTR_SENSOR_DATA] = {
+		.uuid = JWAOO_TOY_UUID_SENSOR,
 		.perm = PERM(NTF, ENABLE),
-		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
-		.length = 0,
-		.value = NULL
-	},
-	[JWAOO_TOY_ATTR_RX_CHAR] = {
-		.uuid = ATT_DECL_CHARACTERISTIC,
-		.perm = PERM(RD, ENABLE),
-		.max_length = sizeof(jwaoo_toy_rx_char),
-		.length = sizeof(jwaoo_toy_rx_char),
-		.value = (uint8_t *)& jwaoo_toy_rx_char
-	},
-	[JWAOO_TOY_ATTR_RX_DATA] = {
-		.uuid = JWAOO_TOY_UUID_RX,
-		.perm = PERM(WR, ENABLE),
-		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
-		.length = 0,
-		.value = NULL
-	},
-	[JWAOO_TOY_ATTR_OTA_CHAR] = {
-		.uuid = ATT_DECL_CHARACTERISTIC,
-		.perm = PERM(RD, ENABLE),
-		.max_length = sizeof(jwaoo_toy_ota_char),
-		.length = sizeof(jwaoo_toy_ota_char),
-		.value = (uint8_t *)& jwaoo_toy_ota_char
-	},
-	[JWAOO_TOY_ATTR_OTA_DATA] = {
-		.uuid = JWAOO_TOY_UUID_OTA,
-		.perm = PERM(WR, ENABLE),
 		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
 		.length = 0,
 		.value = NULL
@@ -250,14 +250,12 @@ static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
 	int handle = param->handle - jwaoo_toy_env.handle;
 
 	switch (handle) {
-	case JWAOO_TOY_ATTR_RX_DATA:
-		uart2_nputs((const char *) param->value, param->length);
-		uart2_nputs("\r\n", 2);
-
-		jwaoo_toy_send_tx_data(param->value, param->length);
+	case JWAOO_TOY_ATTR_COMMAND_DATA:
+		jwaoo_toy_process_command((struct jwaoo_toy_command *) param->value);
 		break;
 
-	case JWAOO_TOY_ATTR_OTA_DATA:
+	case JWAOO_TOY_ATTR_FLASH_DATA:
+		jwaoo_toy_process_flash_data(param->value, param->length);
 		break;
 	}
 

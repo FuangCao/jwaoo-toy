@@ -25,6 +25,7 @@
 #include "global_io.h"
 #include "gpio.h"
 #include "uart.h"                    // UART initialization
+#include "spi_flash.h"
 
 #if DEVELOPMENT_DEBUG
 
@@ -42,22 +43,30 @@ i.e.
 */
 
 #ifdef CFG_PRINTF_UART2
-    RESERVE_GPIO(UART2_TX, UART1_TX_GPIO_PORT, UART1_TX_GPIO_PIN, PID_UART2_TX);
-    RESERVE_GPIO(UART2_RX, UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, PID_UART2_RX);
+	RESERVE_GPIO(UART2_TX, UART1_TX_GPIO_PORT, UART1_TX_GPIO_PIN, PID_UART2_TX);
+	RESERVE_GPIO(UART2_RX, UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, PID_UART2_RX);
 #endif
 
 	LED1_RESERVE;
 	LED2_RESERVE;
 	BLUZZ_RESERVE;
 	RELAY_RESERVE;
+
+	RESERVE_GPIO(SPI_CLK, SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, PID_SPI_CLK);
+	RESERVE_GPIO(SPI_DO, SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, PID_SPI_DO);
+	RESERVE_GPIO(SPI_DI, SPI_DI_GPIO_PORT, SPI_DI_GPIO_PIN, PID_SPI_DI);
+	RESERVE_GPIO(SPI_EN, SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN, PID_SPI_EN);
+
+	RESERVE_GPIO(I2C_SCL, I2C_GPIO_PORT, I2C_SCL_GPIO_PIN, PID_I2C_SCL);
+	RESERVE_GPIO(I2C_SDA, I2C_GPIO_PORT, I2C_SDA_GPIO_PIN, PID_I2C_SDA);
 }
 #endif //DEVELOPMENT_DEBUG
 
 void set_pad_functions(void)        // set gpio port function mode
 {
 #ifdef CFG_PRINTF_UART2
-    GPIO_ConfigurePin(UART1_TX_GPIO_PORT, UART1_TX_GPIO_PIN, OUTPUT, PID_UART2_TX, false);
-    GPIO_ConfigurePin(UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, INPUT, PID_UART2_RX, false);
+	GPIO_ConfigurePin(UART1_TX_GPIO_PORT, UART1_TX_GPIO_PIN, OUTPUT, PID_UART2_TX, false);
+	GPIO_ConfigurePin(UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, INPUT, PID_UART2_RX, false);
 #endif
 
 	LED1_CONFIG;
@@ -65,11 +74,35 @@ void set_pad_functions(void)        // set gpio port function mode
 	BLUZZ_CONFIG;
 	RELAY_CONFIG;
 
+	GPIO_ConfigurePin(SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN, OUTPUT, PID_SPI_EN, true);
+	GPIO_ConfigurePin(SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, OUTPUT, PID_SPI_CLK, false);
+	GPIO_ConfigurePin(SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, OUTPUT, PID_SPI_DO, false);
+	GPIO_ConfigurePin(SPI_DI_GPIO_PORT, SPI_DI_GPIO_PIN, INPUT, PID_SPI_DI, false);
+
+	GPIO_ConfigurePin(I2C_GPIO_PORT, I2C_SCL_GPIO_PIN, OUTPUT, PID_I2C_SCL, false);
+	GPIO_ConfigurePin(I2C_GPIO_PORT, I2C_SDA_GPIO_PIN, OUTPUT, PID_I2C_SDA, false);
+
 /*
 * Configure application ports.
 i.e.
     GPIO_ConfigurePin( GPIO_PORT_0, GPIO_PIN_1, OUTPUT, PID_GPIO, false ); // Set P_01 as Generic purpose Output
 */
+}
+
+static void app_spi_flash_init(void)
+{
+	int ret;
+	SPI_Pad_t flash_cs_pad = { SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN };
+
+	spi_init(&flash_cs_pad, SPI_MODE_8BIT, SPI_ROLE_MASTER, SPI_CLK_IDLE_POL_LOW, SPI_PHA_MODE_0, SPI_MINT_DISABLE, SPI_XTAL_DIV_8);
+
+	spi_flash_release_from_power_down();
+
+	ret = spi_flash_auto_detect();
+	if (ret == SPI_FLASH_AUTO_DETECT_NOT_DETECTED)
+	{
+		spi_flash_init(SPI_FLASH_DEFAULT_SIZE, SPI_FLASH_DEFAULT_PAGE);
+	}
 }
 
 void periph_init(void)
@@ -94,6 +127,8 @@ void periph_init(void)
     SetBits16(CLK_PER_REG, UART2_ENABLE, 1);
     uart2_init(UART_BAUDRATE_115K2, 3);
 #endif
+
+	app_spi_flash_init();
 
    // Enable the pads
     SetBits16(SYS_CTRL_REG, PAD_LATCH_EN, 1);

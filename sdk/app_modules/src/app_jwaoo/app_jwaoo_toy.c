@@ -77,7 +77,6 @@ void app_jwaoo_toy_enable(uint16_t conhdl)
     // Send the message
     ke_msg_send(req);
 }
-
 #endif // (BLE_JWAOO_TOY_SERVER)
 
 /// @} APP
