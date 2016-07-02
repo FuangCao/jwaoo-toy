@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 01 21:16:08 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Sat Jul 02 19:27:50 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -117,7 +117,6 @@ dummyf <= USED 0
 ;FILE jwaoo_toy.o
 jwaoo_toy_send_command_data <= USED 0
 jwaoo_toy_send_command_u16 <= USED 0
-jwaoo_toy_send_command_u32 <= USED 0
 ;FILE ke_task.obj
 ;FILE llc.obj
 ;FILE mpu6050.o

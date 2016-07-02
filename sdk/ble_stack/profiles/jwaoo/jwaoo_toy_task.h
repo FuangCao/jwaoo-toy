@@ -38,13 +38,17 @@
  ****************************************************************************************
  */
 
-#define JWAOO_TOY_TASK_COUNT		1
-#define JWAOO_TOY_MAX_DATA_SIZE		20
+#define JWAOO_TOY_TASK_COUNT			1
+#define JWAOO_TOY_MAX_COMMAND_SIZE		128
+#define JWAOO_TOY_MAX_EVENT_SIZE		128
+#define JWAOO_TOY_MAX_FLASH_DATA_SIZE	128
+#define JWAOO_TOY_MAX_SENSOR_DATA_SIZE	128
 
 enum
 {
 	JWAOO_TOY_UUID_SVC = 0x1888,
 	JWAOO_TOY_UUID_COMMAND,
+	JWAOO_TOY_UUID_EVENT,
 	JWAOO_TOY_UUID_FLASH,
 	JWAOO_TOY_UUID_SENSOR,
 	JWAOO_TOY_UUID_MAX

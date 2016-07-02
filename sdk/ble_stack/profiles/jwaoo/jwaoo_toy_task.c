@@ -36,7 +36,8 @@
 #include "atts_util.h"
 
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
-static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_COMMAND);
+static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_COMMAND);
+static struct att_char_desc jwaoo_toy_event_char = ATT_CHAR(ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_EVENT);
 static struct att_char_desc jwaoo_toy_flash_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_FLASH);
 static struct att_char_desc jwaoo_toy_sensor_char = ATT_CHAR(ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_SENSOR);
 
@@ -59,7 +60,21 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 	[JWAOO_TOY_ATTR_COMMAND_DATA] = {
 		.uuid = JWAOO_TOY_UUID_COMMAND,
 		.perm = PERM(WR, ENABLE) | PERM(RD, ENABLE),
-		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.max_length = JWAOO_TOY_MAX_COMMAND_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+	[JWAOO_TOY_ATTR_EVENT_CHAR] = {
+		.uuid = ATT_DECL_CHARACTERISTIC,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_event_char),
+		.length = sizeof(jwaoo_toy_event_char),
+		.value = (uint8_t *) &jwaoo_toy_event_char
+	},
+	[JWAOO_TOY_ATTR_EVENT_DATA] = {
+		.uuid = JWAOO_TOY_UUID_EVENT,
+		.perm = PERM(NTF, ENABLE),
+		.max_length = JWAOO_TOY_MAX_EVENT_SIZE,
 		.length = 0,
 		.value = NULL
 	},
@@ -73,7 +88,7 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 	[JWAOO_TOY_ATTR_FLASH_DATA] = {
 		.uuid = JWAOO_TOY_UUID_FLASH,
 		.perm = PERM(WR, ENABLE) | PERM(RD, ENABLE),
-		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.max_length = JWAOO_TOY_MAX_FLASH_DATA_SIZE,
 		.length = 0,
 		.value = NULL
 	},
@@ -87,7 +102,7 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 	[JWAOO_TOY_ATTR_SENSOR_DATA] = {
 		.uuid = JWAOO_TOY_UUID_SENSOR,
 		.perm = PERM(NTF, ENABLE),
-		.max_length = JWAOO_TOY_MAX_DATA_SIZE,
+		.max_length = JWAOO_TOY_MAX_SENSOR_DATA_SIZE,
 		.length = 0,
 		.value = NULL
 	},

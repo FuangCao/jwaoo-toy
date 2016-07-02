@@ -41,6 +41,27 @@
  ****************************************************************************************
  */
 
+#define JWAOO_TOY_IDENTIFY	"JwaooToy"
+#define JWAOO_TOY_VERSION	0x20160702
+
+#define jwaoo_toy_send_response_bool(value) \
+	jwaoo_toy_send_command_u8(JWAOO_TOY_RSP_BOOL, value);
+
+#define jwaoo_toy_send_response_u8(value) \
+	jwaoo_toy_send_command_u8(JWAOO_TOY_RSP_U8, value);
+
+#define jwaoo_toy_send_response_u16(value) \
+	jwaoo_toy_send_command_u16(JWAOO_TOY_RSP_U16, value);
+
+#define jwaoo_toy_send_response_u32(value) \
+	jwaoo_toy_send_command_u32(JWAOO_TOY_RSP_U32, value);
+
+#define jwaoo_toy_send_response_data(data, length) \
+	jwaoo_toy_send_command_data(JWAOO_TOY_RSP_DATA, data, length);
+
+#define jwaoo_toy_send_response_text(fmt, args ...) \
+	jwaoo_toy_send_command_text(JWAOO_TOY_RSP_TEXT, fmt, ##args);
+
 /*
  * ENUMERATIONS
  ****************************************************************************************
@@ -53,6 +74,9 @@ enum
 	JWAOO_TOY_ATTR_COMMAND_CHAR,
 	JWAOO_TOY_ATTR_COMMAND_DATA,
 
+	JWAOO_TOY_ATTR_EVENT_CHAR,
+	JWAOO_TOY_ATTR_EVENT_DATA,
+
 	JWAOO_TOY_ATTR_FLASH_CHAR,
 	JWAOO_TOY_ATTR_FLASH_DATA,
 
@@ -64,20 +88,38 @@ enum
 
 enum
 {
-	JWAOO_TOY_CMD_NONE,
 	JWAOO_TOY_RSP_BOOL,
 	JWAOO_TOY_RSP_U8,
 	JWAOO_TOY_RSP_U16,
 	JWAOO_TOY_RSP_U32,
 	JWAOO_TOY_RSP_DATA,
-	JWAOO_TOY_CMD_FLASH_WEN,
+	JWAOO_TOY_RSP_TEXT,
+	JWAOO_TOY_CMD_NOP = 50,
+	JWAOO_TOY_CMD_IDENTIFY,
+	JWAOO_TOY_CMD_VERSION,
+	JWAOO_TOY_CMD_BUILD_DATE,
+	JWAOO_TOY_CMD_REBOOT,
+	JWAOO_TOY_CMD_SHUTDOWN,
+	JWAOO_TOY_CMD_BATT_INFO,
+	JWAOO_TOY_CMD_FLASH_ID,
+	JWAOO_TOY_CMD_FLASH_SIZE,
+	JWAOO_TOY_CMD_FLASH_PAGE_SIZE,
 	JWAOO_TOY_CMD_FLASH_READ,
 	JWAOO_TOY_CMD_FLASH_SEEK,
 	JWAOO_TOY_CMD_FLASH_ERASE,
-	JWAOO_TOY_CMD_FLASH_WRITE_OK,
+	JWAOO_TOY_CMD_FLASH_WRITE_ENABLE,
+	JWAOO_TOY_CMD_FLASH_WRITE_START,
+	JWAOO_TOY_CMD_FLASH_WRITE_FINISH,
 	JWAOO_TOY_CMD_SENSOR_ENABLE,
 	JWAOO_TOY_CMD_SENSOR_SET_DELAY,
-	JWAOO_TOY_CMD_COUNT
+	JWAOO_TOY_CMD_MOTO_ENABLE,
+	JWAOO_TOY_CMD_MOTO_SET_LEVEL,
+};
+
+enum
+{
+	JWAOO_TOY_EVT_BATT_INFO,
+	JWAOO_TOY_EVT_FLASH_ERROR,
 };
 
 #pragma pack(1)
@@ -121,6 +163,8 @@ struct jwaoo_toy_env_tag
 	bool flash_write_ok;
 	bool flash_write_enable;
 	uint32_t flash_write_address;
+	uint8_t flash_cache_size;
+	uint8_t flash_data_cache[128];
 
 	bool sensor_enable;
 	uint16_t sensor_poll_delay;
@@ -168,6 +212,7 @@ uint8_t jwaoo_toy_send_command_u8(uint8_t type, uint8_t value);
 uint8_t jwaoo_toy_send_command_u16(uint8_t type, uint16_t value);
 uint8_t jwaoo_toy_send_command_u32(uint8_t type, uint32_t value);
 uint8_t jwaoo_toy_send_command_data(uint8_t type, const uint8_t *data, int size);
+uint8_t jwaoo_toy_send_command_text(uint8_t type, const char *fmt, ...);
 
 void jwaoo_toy_process_command(const struct jwaoo_toy_command *command);
 void jwaoo_toy_process_flash_data(const uint8_t *data, int length);
@@ -175,31 +220,6 @@ void jwaoo_toy_process_flash_data(const uint8_t *data, int length);
 static inline uint8_t jwaoo_toy_send_command(const uint8_t *command, int size)
 {
 	return jwaoo_toy_write_data(JWAOO_TOY_ATTR_COMMAND_DATA, command, size);
-}
-
-static inline uint8_t jwaoo_toy_send_response_bool(bool value)
-{
-	return jwaoo_toy_send_command_u8(JWAOO_TOY_RSP_BOOL, value);
-}
-
-static inline uint8_t jwaoo_toy_send_response_u8(uint8_t value)
-{
-	return jwaoo_toy_send_command_u8(JWAOO_TOY_RSP_U8, value);
-}
-
-static inline uint16_t jwaoo_toy_send_response_u16(uint16_t value)
-{
-	return jwaoo_toy_send_command_u16(JWAOO_TOY_RSP_U16, value);
-}
-
-static inline uint32_t jwaoo_toy_send_response_u32(uint32_t value)
-{
-	return jwaoo_toy_send_command_u32(JWAOO_TOY_RSP_U32, value);
-}
-
-static inline uint32_t jwaoo_toy_send_response_data(const uint8_t *data, int length)
-{
-	return jwaoo_toy_send_command_data(JWAOO_TOY_RSP_DATA, data, length);
 }
 
 #endif //BLE_JWAOO_TOY_SERVER
