@@ -215,6 +215,13 @@ uint8_t jwaoo_toy_send_command_text(uint8_t type, const char *fmt, ...)
 
 // ===============================================================================
 
+static void jwaoo_toy_reboot_timer(void)
+{
+	pr_pos_info();
+
+	platform_reset(RESET_AFTER_SPOTA_UPDATE);
+}
+
 void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 {
 	bool success = false;
@@ -237,8 +244,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		return;
 
 	case JWAOO_TOY_CMD_REBOOT:
-		platform_reset(RESET_NO_ERROR);
-		success = true;
+		success = (app_easy_timer(100, jwaoo_toy_reboot_timer) != EASY_TIMER_INVALID_TIMER);
 		break;
 
 	case JWAOO_TOY_CMD_SHUTDOWN:
@@ -279,8 +285,6 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 				break;
 			}
 
-			jwaoo_toy_env.flash_write_address = 0;
-			jwaoo_toy_env.flash_write_ok = true;
 			success = true;
 		}
 		break;
@@ -313,24 +317,17 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 	}
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_START:
-		if (spi_flash_set_write_enable() != ERR_OK) {
-			break;
+		if (jwaoo_toy_env.flash_write_enable) {
+			jwaoo_toy_env.flash_write_address = 0;
+			jwaoo_toy_env.flash_write_ok = true;
+			jwaoo_toy_env.flash_cache_size = 0;
+			success = true;
 		}
-
-		if (spi_flash_chip_erase() != ERR_OK) {
-			break;
-		}
-
-		jwaoo_toy_env.flash_write_enable = true;
-		jwaoo_toy_env.flash_write_address = 0;
-		jwaoo_toy_env.flash_write_ok = true;
-		jwaoo_toy_env.flash_cache_size = 0;
-		success = true;
 		break;
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_FINISH:
 		println("flash_write_ok = %d", jwaoo_toy_env.flash_write_ok);
-		if (jwaoo_toy_env.flash_write_ok) {
+		if (jwaoo_toy_env.flash_write_enable && jwaoo_toy_env.flash_write_ok) {
 			if (jwaoo_toy_env.flash_cache_size > 0 && spi_flash_write_data(jwaoo_toy_env.flash_data_cache, jwaoo_toy_env.flash_write_address, jwaoo_toy_env.flash_cache_size) < 0) {
 				break;
 			}
@@ -385,6 +382,7 @@ void jwaoo_toy_process_flash_data(const uint8_t *data, int length)
 				jwaoo_toy_env.flash_cache_size = length - remain;
 				memcpy(jwaoo_toy_env.flash_data_cache, data + remain, jwaoo_toy_env.flash_cache_size);
 			} else {
+				jwaoo_toy_env.flash_write_enable = false;
 				jwaoo_toy_env.flash_write_ok = false;
 			}
 		}

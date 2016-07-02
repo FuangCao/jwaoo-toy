@@ -301,9 +301,9 @@ const struct ke_msg_handler jwaoo_toy_idle[] =
 
 const struct ke_msg_handler jwaoo_toy_connected[] =
 {
-    {GAPC_DISCONNECT_IND,			(ke_msg_func_t) gapc_disconnect_ind_handler},
-    {GATTC_CMP_EVT,					(ke_msg_func_t) gattc_cmp_evt_handler},
-    {GATTC_WRITE_CMD_IND,			(ke_msg_func_t) gattc_write_cmd_ind_handler},
+    { GAPC_DISCONNECT_IND,			(ke_msg_func_t) gapc_disconnect_ind_handler },
+    { GATTC_CMP_EVT,				(ke_msg_func_t) gattc_cmp_evt_handler },
+    { GATTC_WRITE_CMD_IND,			(ke_msg_func_t) gattc_write_cmd_ind_handler },
 };
 
 ///Specifies the message handler structure for every input state.
