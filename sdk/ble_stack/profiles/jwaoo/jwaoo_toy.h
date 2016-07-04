@@ -41,8 +41,9 @@
  ****************************************************************************************
  */
 
-#define JWAOO_TOY_IDENTIFY	"JwaooToy"
-#define JWAOO_TOY_VERSION	0x20160702
+#define JWAOO_TOY_IDENTIFY				"JwaooToy"
+#define JWAOO_TOY_VERSION				0x20160702
+#define JWAOO_TOY_FLASH_CACHE_SIZE		0
 
 #define jwaoo_toy_send_response_bool(value) \
 	jwaoo_toy_send_command_u8(JWAOO_TOY_RSP_BOOL, value);
@@ -163,8 +164,11 @@ struct jwaoo_toy_env_tag
 	bool flash_write_ok;
 	bool flash_write_enable;
 	uint32_t flash_write_address;
+
+#if JWAOO_TOY_FLASH_CACHE_SIZE > 0
 	uint8_t flash_cache_size;
-	uint8_t flash_data_cache[128];
+	uint8_t flash_data_cache[JWAOO_TOY_FLASH_CACHE_SIZE];
+#endif
 
 	bool sensor_enable;
 	uint16_t sensor_poll_delay;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "i2c.h"
+
 #define FDC1004_I2C_ADDRESS			0x50
 #define FDC1004_MANUFACTURER_ID		0x5449
 #define FDC1004_DEVICE_ID           0x1004
@@ -32,6 +34,8 @@ enum {
 
 int fdc1004_read_u16(uint8_t addr, uint16_t *value);
 int fdc1004_write_u16(uint8_t addr, uint16_t value);
+int fdc1004_read_capacity(uint8_t addr, uint32_t *value);
+int fdc1004_get_depth(void);
 int fdc1004_read_id(void);
 int fdc1004_init(void);
 

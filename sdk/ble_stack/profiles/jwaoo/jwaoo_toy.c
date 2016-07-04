@@ -35,6 +35,7 @@
 #include "prf_utils.h"
 #include "app_easy_timer.h"
 #include "mpu6050.h"
+#include "fdc1004.h"
 
 /*
  * MACROS
@@ -74,9 +75,10 @@ static timer_hnd app_sensor_timer_id = EASY_TIMER_INVALID_TIMER;
 
 static void jwaoo_toy_sensor_poll_timer(void)
 {
-	uint8_t buff[14];
+	uint8_t buff[15];
 
-	MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, sizeof(buff));
+	MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, 14);
+	buff[14] = fdc1004_get_depth();
 	jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, sizeof(buff));
 
 	app_sensor_timer_id = app_easy_timer(jwaoo_toy_env.sensor_poll_delay, jwaoo_toy_sensor_poll_timer);
@@ -318,9 +320,12 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_START:
 		if (jwaoo_toy_env.flash_write_enable) {
+			jwaoo_toy_sensor_set_enable(false);
 			jwaoo_toy_env.flash_write_address = 0;
 			jwaoo_toy_env.flash_write_ok = true;
+#if JWAOO_TOY_FLASH_CACHE_SIZE > 0
 			jwaoo_toy_env.flash_cache_size = 0;
+#endif
 			success = true;
 		}
 		break;
@@ -328,9 +333,11 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 	case JWAOO_TOY_CMD_FLASH_WRITE_FINISH:
 		println("flash_write_ok = %d", jwaoo_toy_env.flash_write_ok);
 		if (jwaoo_toy_env.flash_write_enable && jwaoo_toy_env.flash_write_ok) {
+#if JWAOO_TOY_FLASH_CACHE_SIZE > 0
 			if (jwaoo_toy_env.flash_cache_size > 0 && spi_flash_write_data(jwaoo_toy_env.flash_data_cache, jwaoo_toy_env.flash_write_address, jwaoo_toy_env.flash_cache_size) < 0) {
 				break;
 			}
+#endif
 
 			jwaoo_toy_env.flash_write_enable = false;
 			success = true;
@@ -366,6 +373,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 void jwaoo_toy_process_flash_data(const uint8_t *data, int length)
 {
 	if (jwaoo_toy_env.flash_write_enable) {
+#if JWAOO_TOY_FLASH_CACHE_SIZE > 0
 		int remain = sizeof(jwaoo_toy_env.flash_data_cache) - jwaoo_toy_env.flash_cache_size;
 
 		if (length < remain) {
@@ -386,6 +394,16 @@ void jwaoo_toy_process_flash_data(const uint8_t *data, int length)
 				jwaoo_toy_env.flash_write_ok = false;
 			}
 		}
+#else
+	int wrlen = spi_flash_write_data((uint8_t *) data, jwaoo_toy_env.flash_write_address, length);
+	if (wrlen < 0) {
+		println("Failed to spi_flash_write_data: %d", wrlen);
+		jwaoo_toy_env.flash_write_enable = false;
+		jwaoo_toy_env.flash_write_ok = false;
+	} else {
+		jwaoo_toy_env.flash_write_address += wrlen;
+	}
+#endif
 	} else {
 		jwaoo_toy_env.flash_write_ok = false;
 	}

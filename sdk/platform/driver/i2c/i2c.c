@@ -120,7 +120,7 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 					goto out_enable_irq;
 				}
 
-				while (fifo_size > 0) {
+				while (fifo_size > 0 && data < data_end) {
 					*data++ = GetWord16(I2C_DATA_CMD_REG) & 0xFF;
 					fifo_size--;
 				}

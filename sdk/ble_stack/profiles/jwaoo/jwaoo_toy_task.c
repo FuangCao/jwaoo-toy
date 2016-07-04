@@ -38,7 +38,7 @@
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
 static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_COMMAND);
 static struct att_char_desc jwaoo_toy_event_char = ATT_CHAR(ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_EVENT);
-static struct att_char_desc jwaoo_toy_flash_char = ATT_CHAR(ATT_CHAR_PROP_WR_NO_RESP | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_FLASH);
+static struct att_char_desc jwaoo_toy_flash_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_FLASH);
 static struct att_char_desc jwaoo_toy_sensor_char = ATT_CHAR(ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_SENSOR);
 
 const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
