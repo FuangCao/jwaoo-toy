@@ -34,7 +34,7 @@
 #include "jwaoo_toy_task.h"
 #include "prf_utils.h"
 #include "app_easy_timer.h"
-#include "MPU6050.h"
+#include "mpu6050.h"
 
 /*
  * MACROS

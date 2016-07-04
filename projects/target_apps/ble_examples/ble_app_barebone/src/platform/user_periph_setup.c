@@ -26,7 +26,8 @@
 #include "gpio.h"
 #include "uart.h"                    // UART initialization
 #include "spi_flash.h"
-#include "MPU6050.h"
+#include "i2c.h"
+#include "mpu6050.h"
 
 #if DEVELOPMENT_DEBUG
 
@@ -130,6 +131,8 @@ void periph_init(void)
 #endif
 
 	app_spi_flash_init();
+
+	i2c_init(I2C_SPEED_100K, I2C_ADDRESS_MODE_7BIT);
 	MPU6050_Initialize();
 	MPU6050_GetDeviceID();
 

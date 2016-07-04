@@ -5,8 +5,8 @@
 #include "global_io.h"
 #include "gpio.h"
 #include "user_periph_setup.h"
-#include "i2c_eeprom.h"
-#include "MPU6050.h"
+#include "i2c.h"
+#include "mpu6050.h"
 #include "uart.h"
 
 /** @defgroup MPU6050_Library
@@ -25,16 +25,6 @@ void delay_ms(unsigned int num)
   }
 }
 
-/**
-* @brief  Initializes the I2C peripheral used to drive the MPU6050
-* @param  None
-* @return None
-*/
-void MPU6050_I2C_Init(void)
-{
-  i2c_eeprom_init(MPU6050_DEFAULT_ADDRESS, I2C_FAST, I2C_7BIT_ADDR, I2C_1BYTE_ADDR);
-}
-
 /** Power on and prepare for general usage.
  * This will activate the device and take it out of sleep mode (which must be done
  * after start-up). This function also sets both the accelerometer and the gyroscope
@@ -46,7 +36,6 @@ void MPU6050_Initialize(void)
 {
 	println("MPU6050_Initialize");
 
-	  MPU6050_I2C_Init();
     MPU6050_SetClockSource(MPU6050_CLOCK_PLL_XGYRO);
 	  delay_ms(100);
     MPU6050_SetFullScaleGyroRange(MPU6050_GYRO_FS_250); //every 131 means 1 degree/second
@@ -63,7 +52,6 @@ void MPU6050_Initialize(void)
 void MPU6050_DeInitialize(void) 
 {
 	MPU6050_SetSleepModeStatus(ENABLE);  //allow the MPU6050 to enter sleep mode
-	i2c_eeprom_release(); //disable the I2C controller and CLK for I2C
 }
 
 /** Verify the I2C connection.
@@ -349,7 +337,7 @@ void MPU6050_I2C_ByteWrite(uint8_t slaveAddr, uint8_t* pBuffer, uint8_t writeAdd
 	  slave address to I2C_TAR_REG during init.
 	*/
 	if(pBuffer)
-    i2c_eeprom_write_byte(writeAddr,*pBuffer);
+		i2c_write_u8(slaveAddr, writeAddr, *pBuffer);
 }
 
 /**
@@ -368,7 +356,7 @@ void MPU6050_I2C_BufferRead(uint8_t slaveAddr, uint8_t* pBuffer, uint8_t readAdd
 	  slave address to I2C_TAR_REG during init.
 	*/
   if((NumByteToRead>0)&&(pBuffer))
-	  i2c_eeprom_read_data(pBuffer, readAddr, NumByteToRead);
+	  i2c_read_data(slaveAddr, readAddr, pBuffer, NumByteToRead);
 }
 
 void MPU6050ReadTempRaw(short *tempData)

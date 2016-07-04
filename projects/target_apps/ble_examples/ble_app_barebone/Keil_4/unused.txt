@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Sat Jul 02 20:30:57 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 04 12:45:42 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -107,11 +107,11 @@ GPIO_GetIRQInputLevel <= USED 0
 GPIO_RegisterCallback <= USED 0
 GPIO_SetIRQInputLevel <= USED 0
 ;FILE hardfault_handler.o
-;FILE i2c_eeprom.o
-i2c_eeprom_read_byte <= USED 0
-i2c_eeprom_release <= USED 0
-i2c_eeprom_write_data <= USED 0
-i2c_eeprom_write_page <= USED 0
+;FILE i2c.o
+i2c_release <= USED 0
+i2c_update_u16 <= USED 0
+i2c_update_u32 <= USED 0
+i2c_update_u8 <= USED 0
 ;FILE jump_table.o
 dummyf <= USED 0
 ;FILE jwaoo_toy.o
