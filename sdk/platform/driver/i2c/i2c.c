@@ -21,6 +21,8 @@
 #include "user_periph_setup.h"
 #include "i2c.h"
 
+#define I2C_AUTO_POWER_DOWN		1
+
 void i2c_init(uint8_t speed, uint8_t address_mode)
 {
 	SetBits16(CLK_PER_REG, I2C_ENABLE, 1);                                        // enable  clock for I2C
@@ -28,9 +30,11 @@ void i2c_init(uint8_t speed, uint8_t address_mode)
 	SetWord16(I2C_CON_REG, I2C_MASTER_MODE | I2C_SLAVE_DISABLE | I2C_RESTART_EN); // Slave is disabled
 	SetBits16(I2C_CON_REG, I2C_SPEED, speed);                                     // Set speed
 	SetBits16(I2C_CON_REG, I2C_10BITADDR_MASTER, address_mode);                   // Set addressing mode
-	SetWord16(I2C_ENABLE_REG, 0x1);                                               // Enable the I2C controller
 
+#if I2C_AUTO_POWER_DOWN == 0
+	SetWord16(I2C_ENABLE_REG, 1);
 	I2C_WAIT_UNTIL_NO_MASTER_ACTIVITY();
+#endif
 }
 
 void i2c_release(void)
@@ -39,19 +43,24 @@ void i2c_release(void)
     SetBits16(CLK_PER_REG, I2C_ENABLE, 0);                      // Disable clock for I2C
 }
 
-static uint8_t i2c_slave;
-
 int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 {
 	struct i2c_message *msg = msgs;
 	struct i2c_message *msg_end = msg + count;
 
-	if (slave != i2c_slave) {
-		i2c_slave = slave;
+#if I2C_AUTO_POWER_DOWN
+	SetWord16(I2C_TAR_REG, slave);
+	SetWord16(I2C_ENABLE_REG, 1);
+#else
+	static uint8_t last_slave;
+
+	if (slave != last_slave) {
+		last_slave = slave;
 		SetWord16(I2C_ENABLE_REG, 0);
 		SetWord16(I2C_TAR_REG, slave);
 		SetWord16(I2C_ENABLE_REG, 1);
 	}
+#endif
 
 	I2C_WAIT_UNTIL_NO_MASTER_ACTIVITY();
 
@@ -98,6 +107,11 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 
 out_enable_irq:
 	GLOBAL_INT_RESTORE();
+
+#if I2C_AUTO_POWER_DOWN
+	SetWord16(I2C_ENABLE_REG, 0);
+#endif
+
 	return count;
 }
 
