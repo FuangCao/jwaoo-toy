@@ -23,6 +23,32 @@
 
 #define I2C_AUTO_POWER_DOWN		1
 
+static int i2c_read_byte()
+{
+	int i;
+
+	for (i = 0; i < 5000; i++) {
+		if (GetWord16(I2C_RXFLR_REG)) {
+			return GetWord16(I2C_DATA_CMD_REG) & 0xFF;
+		}
+	}
+
+	return -1;
+}
+
+static int i2c_wait_until_idle()
+{
+	int i;
+
+	for (i = 0; i < 20000; i++) {
+		if ((GetWord16(I2C_STATUS_REG) & MST_ACTIVITY) == 0) {
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
 void i2c_init(uint8_t speed, uint8_t address_mode)
 {
 	SetBits16(CLK_PER_REG, I2C_ENABLE, 1);                                        // enable  clock for I2C
@@ -33,7 +59,7 @@ void i2c_init(uint8_t speed, uint8_t address_mode)
 
 #if I2C_AUTO_POWER_DOWN == 0
 	SetWord16(I2C_ENABLE_REG, 1);
-	I2C_WAIT_UNTIL_NO_MASTER_ACTIVITY();
+	i2c_wait_until_idle();
 #endif
 }
 
@@ -45,6 +71,7 @@ void i2c_release(void)
 
 int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 {
+	int ret;
 	struct i2c_message *msg = msgs;
 	struct i2c_message *msg_end = msg + count;
 
@@ -62,7 +89,10 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 	}
 #endif
 
-	I2C_WAIT_UNTIL_NO_MASTER_ACTIVITY();
+	ret = i2c_wait_until_idle();
+	if (ret < 0) {
+		goto out_i2c_disable;
+	}
 
 	GLOBAL_INT_DISABLE();
 
@@ -81,8 +111,12 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 			}
 
 			while (data < data_end) {
-				I2C_WAIT_FOR_RECEIVED_BYTE();
-				*data++ = GetWord16(I2C_DATA_CMD_REG) & 0xFF;
+				int ret = i2c_read_byte();
+				if (ret < 0) {
+					goto out_enable_irq;
+				}
+
+				*data++ = ret;
 			}
 
 			msg++;
@@ -98,21 +132,23 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 				I2C_WAIT_UNTIL_TX_FIFO_EMPTY();
 
 				if (GetWord16(I2C_TX_ABRT_SOURCE_REG) & ABRT_7B_ADDR_NOACK) {
-					count = -1;
+					ret = -1;
 					goto out_enable_irq;
 				}
 			}
 		}
 	}
 
+	ret = count;
+
 out_enable_irq:
 	GLOBAL_INT_RESTORE();
-
+out_i2c_disable:
 #if I2C_AUTO_POWER_DOWN
 	SetWord16(I2C_ENABLE_REG, 0);
 #endif
 
-	return count;
+	return ret;
 }
 
 int i2c_read_data(uint8_t slave, uint8_t addr, uint8_t *data, int size)

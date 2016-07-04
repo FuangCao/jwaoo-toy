@@ -42,12 +42,6 @@
 #define I2C_WAIT_UNTIL_TX_FIFO_EMPTY() \
 	while((GetWord16(I2C_STATUS_REG) & TFE) == 0)
 
-#define I2C_WAIT_UNTIL_NO_MASTER_ACTIVITY() \
-	while((GetWord16(I2C_STATUS_REG) & MST_ACTIVITY) !=0)
-
-#define I2C_WAIT_FOR_RECEIVED_BYTE() \
-	while(GetWord16(I2C_RXFLR_REG) == 0)
-
 enum
 {
 	I2C_SPEED_100K = 1,
