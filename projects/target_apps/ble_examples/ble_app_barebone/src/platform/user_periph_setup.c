@@ -28,6 +28,7 @@
 #include "spi_flash.h"
 #include "i2c.h"
 #include "mpu6050.h"
+#include "fdc1004.h"
 
 #if DEVELOPMENT_DEBUG
 
@@ -59,8 +60,8 @@ i.e.
 	RESERVE_GPIO(SPI_DI, SPI_DI_GPIO_PORT, SPI_DI_GPIO_PIN, PID_SPI_DI);
 	RESERVE_GPIO(SPI_EN, SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN, PID_SPI_EN);
 
-	RESERVE_GPIO(I2C_SCL, I2C_GPIO_PORT, I2C_SCL_GPIO_PIN, PID_I2C_SCL);
-	RESERVE_GPIO(I2C_SDA, I2C_GPIO_PORT, I2C_SDA_GPIO_PIN, PID_I2C_SDA);
+	RESERVE_GPIO(I2C_SCL, I2C1_GPIO_PORT, I2C1_SCL_GPIO_PIN, PID_I2C_SCL);
+	RESERVE_GPIO(I2C_SDA, I2C1_GPIO_PORT, I2C1_SDA_GPIO_PIN, PID_I2C_SDA);
 }
 #endif //DEVELOPMENT_DEBUG
 
@@ -81,8 +82,8 @@ void set_pad_functions(void)        // set gpio port function mode
 	GPIO_ConfigurePin(SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, OUTPUT, PID_SPI_DO, false);
 	GPIO_ConfigurePin(SPI_DI_GPIO_PORT, SPI_DI_GPIO_PIN, INPUT, PID_SPI_DI, false);
 
-	GPIO_ConfigurePin(I2C_GPIO_PORT, I2C_SCL_GPIO_PIN, OUTPUT, PID_I2C_SCL, false);
-	GPIO_ConfigurePin(I2C_GPIO_PORT, I2C_SDA_GPIO_PIN, OUTPUT, PID_I2C_SDA, false);
+	GPIO_ConfigurePin(I2C1_GPIO_PORT, I2C1_SCL_GPIO_PIN, OUTPUT, PID_I2C_SCL, false);
+	GPIO_ConfigurePin(I2C1_GPIO_PORT, I2C1_SDA_GPIO_PIN, OUTPUT, PID_I2C_SDA, false);
 
 /*
 * Configure application ports.
@@ -135,6 +136,8 @@ void periph_init(void)
 	i2c_init(I2C_SPEED_100K, I2C_ADDRESS_MODE_7BIT);
 	MPU6050_Initialize();
 	MPU6050_GetDeviceID();
+
+	fdc1004_init();
 
    // Enable the pads
     SetBits16(SYS_CTRL_REG, PAD_LATCH_EN, 1);

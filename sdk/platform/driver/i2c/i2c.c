@@ -20,16 +20,18 @@
 #include "gpio.h"
 #include "user_periph_setup.h"
 #include "i2c.h"
+#include "uart.h"
 
 #define I2C_AUTO_POWER_DOWN		1
 
-static int i2c_read_byte()
+static int i2c_get_rx_fifo_size()
 {
 	int i;
 
-	for (i = 0; i < 5000; i++) {
-		if (GetWord16(I2C_RXFLR_REG)) {
-			return GetWord16(I2C_DATA_CMD_REG) & 0xFF;
+	for (i = 0; i < 50000; i++) {
+		uint16_t size = GetWord16(I2C_RXFLR_REG);
+		if (size > 0) {
+			return size;
 		}
 	}
 
@@ -40,7 +42,7 @@ static int i2c_wait_until_idle()
 {
 	int i;
 
-	for (i = 0; i < 20000; i++) {
+	for (i = 0; i < 500000; i++) {
 		if ((GetWord16(I2C_STATUS_REG) & MST_ACTIVITY) == 0) {
 			return 0;
 		}
@@ -111,12 +113,17 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 			}
 
 			while (data < data_end) {
-				int ret = i2c_read_byte();
-				if (ret < 0) {
+				int fifo_size = i2c_get_rx_fifo_size();
+				if (fifo_size < 0) {
+					ret = fifo_size;
+					println("Failed to i2c_read_byte");
 					goto out_enable_irq;
 				}
 
-				*data++ = ret;
+				while (fifo_size > 0) {
+					*data++ = GetWord16(I2C_DATA_CMD_REG) & 0xFF;
+					fifo_size--;
+				}
 			}
 
 			msg++;
@@ -129,10 +136,14 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 			msg++;
 
 			if (msg >= msg_end || msg->read) {
+				uint16_t status;
+
 				I2C_WAIT_UNTIL_TX_FIFO_EMPTY();
 
-				if (GetWord16(I2C_TX_ABRT_SOURCE_REG) & ABRT_7B_ADDR_NOACK) {
+				status = GetWord16(I2C_TX_ABRT_SOURCE_REG);
+				if (status) {
 					ret = -1;
+					println("I2C_TX_ABRT_SOURCE_REG = 0x%04x", status);
 					goto out_enable_irq;
 				}
 			}
@@ -166,10 +177,10 @@ int i2c_read_data(uint8_t slave, uint8_t addr, uint8_t *data, int size)
 	};
 
 	if (i2c_transfer(slave, msgs, NELEM(msgs)) == NELEM(msgs)) {
-		return -1;
+		return size;
 	}
 
-	return size;
+	return -1;
 }
 
 int i2c_write_data(uint8_t slave, uint8_t addr, const uint8_t *data, int size)
@@ -187,10 +198,10 @@ int i2c_write_data(uint8_t slave, uint8_t addr, const uint8_t *data, int size)
 	};
 
 	if (i2c_transfer(slave, msgs, NELEM(msgs)) == NELEM(msgs)) {
-		return -1;
+		return size;
 	}
 
-	return size;
+	return -1;
 }
 
 int i2c_update_u8(uint8_t slave, uint8_t addr, uint8_t value, uint8_t mask)

@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 04 14:25:13 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 04 16:52:43 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -99,6 +99,8 @@ batt_cal_cr2032 <= USED 0
 battery_get_lvl <= USED 0
 ;FILE boot_vectors.o
 ;FILE ch_map.obj
+;FILE fdc1004.o
+fdc1004_write_u16 <= USED 0
 ;FILE gapm_util.obj
 ;FILE gpio.o
 GPIO_ConfigurePinPower <= USED 0

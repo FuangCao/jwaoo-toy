@@ -82,9 +82,13 @@
 /* i2c eeprom configuration                                                             */
 /****************************************************************************************/
 
-#define I2C_GPIO_PORT		GPIO_PORT_1
-#define I2C_SCL_GPIO_PIN	GPIO_PIN_3
-#define I2C_SDA_GPIO_PIN	GPIO_PIN_2
+#define I2C1_GPIO_PORT		GPIO_PORT_1
+#define I2C1_SDA_GPIO_PIN	GPIO_PIN_2
+#define I2C1_SCL_GPIO_PIN	GPIO_PIN_3
+
+#define I2C2_GPIO_PORT		GPIO_PORT_0
+#define I2C2_SDA_GPIO_PIN	GPIO_PIN_2
+#define I2C2_SCL_GPIO_PIN	GPIO_PIN_7
 
 #define I2C_EEPROM_SIZE		0x20000         // EEPROM size in bytes
 #define I2C_EEPROM_PAGE		256             // EEPROM's page size in bytes
