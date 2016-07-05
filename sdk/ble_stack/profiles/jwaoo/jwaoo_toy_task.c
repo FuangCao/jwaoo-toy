@@ -162,13 +162,17 @@ static int jwaoo_toy_sensor_poll_req_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	uint8_t buff[15];
+	if (jwaoo_toy_env.notify_busy) {
+		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
+	} else {
+		uint8_t buff[7];
 
-	MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, 14);
-	buff[14] = fdc1004_get_depth();
-	jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, sizeof(buff));
+		MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, 6);
+		buff[6] = fdc1004_get_depth();
+		jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, sizeof(buff));
 
-	ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, jwaoo_toy_env.sensor_poll_delay);
+		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, jwaoo_toy_env.sensor_poll_delay);
+	}
 
     return (KE_MSG_CONSUMED);
 }
