@@ -1080,8 +1080,8 @@ void system_init(void)
  * @return Returns nothing.
  ****************************************************************************************
  */
-void wrap_platform_reset(uint32_t error)
-{    
+void wrap_platform_reset(volatile uint32_t error)
+{
     ASSERT_WARNING(error==RESET_AFTER_SPOTA_UPDATE);   //do not break in case of a SPOTA reset
     platform_reset_func(error);
 }

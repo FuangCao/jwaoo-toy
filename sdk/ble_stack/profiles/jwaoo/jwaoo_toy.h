@@ -160,6 +160,7 @@ struct jwaoo_toy_env_tag
 
     /// Service Start HandleVAL
     uint16_t handle;
+	bool notify_busy;
 
 	bool flash_write_ok;
 	bool flash_write_enable;

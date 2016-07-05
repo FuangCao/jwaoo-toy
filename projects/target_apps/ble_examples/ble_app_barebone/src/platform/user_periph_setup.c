@@ -133,7 +133,7 @@ void periph_init(void)
 
 	app_spi_flash_init();
 
-	i2c_init(I2C_SPEED_100K, I2C_ADDRESS_MODE_7BIT);
+	i2c_init(I2C_SPEED_400K, I2C_ADDRESS_MODE_7BIT);
 	MPU6050_Initialize();
 	MPU6050_GetDeviceID();
 

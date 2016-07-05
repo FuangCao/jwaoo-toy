@@ -34,6 +34,8 @@
 #include "prf_utils.h"
 #include "attm_util.h"
 #include "atts_util.h"
+#include "mpu6050.h"
+#include "fdc1004.h"
 
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
 static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_COMMAND);
@@ -155,11 +157,19 @@ static int jwaoo_toy_create_db_req_handler(ke_msg_id_t const msgid,
  * @return If the message was consumed or not.
  ****************************************************************************************
  */
-static int jwaoo_toy_set_char_val_req_handler(ke_msg_id_t const msgid,
+static int jwaoo_toy_sensor_poll_req_handler(ke_msg_id_t const msgid,
                                          struct jwaoo_toy_set_char_val_req const *param,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
+	uint8_t buff[15];
+
+	MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, 14);
+	buff[14] = fdc1004_get_depth();
+	jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, sizeof(buff));
+
+	ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, jwaoo_toy_env.sensor_poll_delay);
+
     return (KE_MSG_CONSUMED);
 }
 
@@ -242,6 +252,10 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
                                 ke_task_id_t const dest_id,
                                 ke_task_id_t const src_id)
 {
+	if (param->req_type == GATTC_NOTIFY) {
+		jwaoo_toy_env.notify_busy = false;
+	}
+
     return (KE_MSG_CONSUMED);
 }
 
@@ -261,9 +275,9 @@ static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
                                       ke_task_id_t const dest_id,
                                       ke_task_id_t const src_id)
 {
-	int handle = param->handle - jwaoo_toy_env.handle;
+	int attr = param->handle - jwaoo_toy_env.handle;
 
-	switch (handle) {
+	switch (attr) {
 	case JWAOO_TOY_ATTR_COMMAND_DATA:
 		jwaoo_toy_process_command((struct jwaoo_toy_command *) param->value);
 		break;
@@ -295,12 +309,12 @@ const struct ke_msg_handler jwaoo_toy_disabled[] =
 ///Idle State handler definition.
 const struct ke_msg_handler jwaoo_toy_idle[] =
 {
-    { JWAOO_TOY_SET_CHAR_VAL_REQ,	(ke_msg_func_t) jwaoo_toy_set_char_val_req_handler },
     { JWAOO_TOY_ENABLE_REQ,			(ke_msg_func_t) jwaoo_toy_enable_req_handler },
 };
 
 const struct ke_msg_handler jwaoo_toy_connected[] =
 {
+    { JWAOO_TOY_SENSOR_POLL,		(ke_msg_func_t) jwaoo_toy_sensor_poll_req_handler },
     { GAPC_DISCONNECT_IND,			(ke_msg_func_t) gapc_disconnect_ind_handler },
     { GATTC_CMP_EVT,				(ke_msg_func_t) gattc_cmp_evt_handler },
     { GATTC_WRITE_CMD_IND,			(ke_msg_func_t) gattc_write_cmd_ind_handler },

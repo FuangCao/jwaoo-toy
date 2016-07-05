@@ -487,10 +487,6 @@ enum KE_TASK_TYPE
 	TASK_CUSTS1		    ,	// 1st Custom profile server
     #endif
 
-	#if BLE_JWAOO_TOY_SERVER
-	TASK_JWAOO_TOY_SERVER,
-	#endif
-
     // End of conditionally assigned task types
     
     TASK_HCI            = 60  ,

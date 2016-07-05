@@ -76,7 +76,7 @@ enum
     ///Inform APP of database creation status
     JWAOO_TOY_CREATE_DB_CFM,
     ///Set the value of an attribute
-    JWAOO_TOY_SET_CHAR_VAL_REQ,
+    JWAOO_TOY_SENSOR_POLL,
 
     ///Start the Device Information Service Task - at connection
     JWAOO_TOY_ENABLE_REQ,

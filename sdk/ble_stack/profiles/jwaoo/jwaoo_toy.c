@@ -34,8 +34,6 @@
 #include "jwaoo_toy_task.h"
 #include "prf_utils.h"
 #include "app_easy_timer.h"
-#include "mpu6050.h"
-#include "fdc1004.h"
 
 /*
  * MACROS
@@ -66,42 +64,26 @@ extern uint32_t spi_flash_size;
 extern uint32_t spi_flash_page_size;
 extern const SPI_FLASH_DEVICE_PARAMETERS_BY_JEDEC_ID_t *spi_flash_detected_device;
 
-static timer_hnd app_sensor_timer_id = EASY_TIMER_INVALID_TIMER;
-
 /*
  * FUNCTION DEFINITIONS
  ****************************************************************************************
  */
-
-static void jwaoo_toy_sensor_poll_timer(void)
-{
-	uint8_t buff[15];
-
-	MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, 14);
-	buff[14] = fdc1004_get_depth();
-	jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, sizeof(buff));
-
-	app_sensor_timer_id = app_easy_timer(jwaoo_toy_env.sensor_poll_delay, jwaoo_toy_sensor_poll_timer);
-}
 
 static bool jwaoo_toy_sensor_set_enable(bool enable)
 {
 	println("sensor_enable = %d", enable);
 
 	if (enable) {
-		if (app_sensor_timer_id == EASY_TIMER_INVALID_TIMER) {
-			app_sensor_timer_id = app_easy_timer(jwaoo_toy_env.sensor_poll_delay, jwaoo_toy_sensor_poll_timer);
+		if (ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
+			return true;
 		}
 
-		return (app_sensor_timer_id != EASY_TIMER_INVALID_TIMER);
+		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
 	} else {
-		if (app_sensor_timer_id != EASY_TIMER_INVALID_TIMER) {
-			app_easy_timer_cancel(app_sensor_timer_id);
-			app_sensor_timer_id = EASY_TIMER_INVALID_TIMER;
-		}
-
-		return true;
+		ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
 	}
+
+	return true;
 }
 
 void jwaoo_toy_init(void)
@@ -120,6 +102,8 @@ void jwaoo_toy_init(void)
 
 void jwaoo_toy_enable(uint16_t conhdl) 
 {
+	jwaoo_toy_env.notify_busy = false;
+
 	if (jwaoo_toy_env.sensor_enable) {
 		jwaoo_toy_sensor_set_enable(true);
 	}
@@ -158,8 +142,15 @@ uint8_t jwaoo_toy_send_notify(uint16_t attr, const uint8_t *data, int size)
 	uint8_t ret;
 	uint16_t handle = jwaoo_toy_env.handle + attr;
 
+	if (jwaoo_toy_env.notify_busy) {
+		return ATT_ERR_APP_ERROR;
+	}
+
+	jwaoo_toy_env.notify_busy = true;
+
 	ret = attmdb_att_set_value(handle, size, (uint8_t *) data);
 	if (ret != ATT_ERR_NO_ERROR) {
+		println("Failed to attmdb_att_set_value: %d", ret);
 		return ret;
 	}
 
