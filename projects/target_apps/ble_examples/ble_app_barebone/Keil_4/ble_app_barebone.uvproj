@@ -786,11 +786,6 @@
               <FilePath>..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_security.c</FilePath>
             </File>
             <File>
-              <FileName>app_easy_timer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_timer.c</FilePath>
-            </File>
-            <File>
               <FileName>app_customs.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_custs\app_customs.c</FilePath>
@@ -814,6 +809,11 @@
               <FileName>app_jwaoo_toy.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_easy_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_timer.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1824,11 +1824,6 @@
               <FilePath>..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_security.c</FilePath>
             </File>
             <File>
-              <FileName>app_easy_timer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_timer.c</FilePath>
-            </File>
-            <File>
               <FileName>app_customs.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_custs\app_customs.c</FilePath>
@@ -1852,6 +1847,11 @@
               <FileName>app_jwaoo_toy.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_easy_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_timer.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2862,11 +2862,6 @@
               <FilePath>..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_security.c</FilePath>
             </File>
             <File>
-              <FileName>app_easy_timer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_timer.c</FilePath>
-            </File>
-            <File>
               <FileName>app_customs.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\..\..\..\..\..\sdk\app_modules\src\app_custs\app_customs.c</FilePath>
@@ -2890,6 +2885,11 @@
               <FileName>app_jwaoo_toy.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\..\..\sdk\app_modules\src\app_jwaoo\app_jwaoo_toy.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_easy_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\..\..\sdk\app_modules\src\app_easy\app_easy_timer.c</FilePath>
             </File>
           </Files>
         </Group>

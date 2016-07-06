@@ -133,7 +133,7 @@ int fdc1004_get_depth(void)
 
 		println("addr = %x, value = %x", addr, value);
 
-		if (value > 0x00100000) {
+		if (value > 0x000F0000) {
 			depth++;
 		}
 	}
@@ -147,9 +147,9 @@ int fdc1004_get_depth(void)
 			return ret;
 		}
 
-		println("addr = %x, value = %x", addr, value);
+		// println("addr = %x, value = %x", addr, value);
 
-		if (value > 0x1000) {
+		if (value > 0x0F00) {
 			depth++;
 		}
 	}
