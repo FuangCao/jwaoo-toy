@@ -153,9 +153,11 @@ void jwaoo_toy_enable(uint16_t conhdl)
 	jwaoo_toy_env.fdc1004_dead = 0;
 	jwaoo_toy_env.mpu6050_dead = 0;
 
+#if 0
 	if (jwaoo_toy_env.sensor_enable) {
 		jwaoo_toy_sensor_set_enable(true);
 	}
+#endif
 }
 
 void jwaoo_toy_disable(uint16_t conhdl) 
