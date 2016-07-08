@@ -50,6 +50,7 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.length = sizeof(jwaoo_toy_svc),
 		.value = (uint8_t *) &jwaoo_toy_svc
 	},
+	// ============================================================
 	[JWAOO_TOY_ATTR_COMMAND_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
@@ -64,6 +65,14 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.length = 0,
 		.value = NULL
 	},
+	[JWAOO_TOY_ATTR_COMMAND_CFG] = {
+		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
+		.perm = PERM(WR, ENABLE),
+		.max_length = 2,
+		.length = 0,
+		.value = NULL
+	},
+	// ============================================================
 	[JWAOO_TOY_ATTR_EVENT_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
@@ -78,6 +87,14 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.length = 0,
 		.value = NULL
 	},
+	[JWAOO_TOY_ATTR_EVENT_CFG] = {
+		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
+		.perm = PERM(WR, ENABLE),
+		.max_length = 2,
+		.length = 0,
+		.value = NULL
+	},
+	// ============================================================
 	[JWAOO_TOY_ATTR_FLASH_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
@@ -92,6 +109,14 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.length = 0,
 		.value = NULL
 	},
+	[JWAOO_TOY_ATTR_FLASH_CFG] = {
+		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
+		.perm = PERM(WR, ENABLE),
+		.max_length = 2,
+		.length = 0,
+		.value = NULL
+	},
+	// ============================================================
 	[JWAOO_TOY_ATTR_SENSOR_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
 		.perm = PERM(RD, ENABLE),
@@ -103,6 +128,13 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.uuid = JWAOO_TOY_UUID_SENSOR,
 		.perm = PERM(NTF, ENABLE),
 		.max_length = JWAOO_TOY_MAX_SENSOR_DATA_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+	[JWAOO_TOY_ATTR_SENSOR_CFG] = {
+		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
+		.perm = PERM(WR, ENABLE),
+		.max_length = 2,
 		.length = 0,
 		.value = NULL
 	},
