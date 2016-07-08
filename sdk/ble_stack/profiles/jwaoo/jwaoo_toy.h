@@ -123,6 +123,13 @@ enum
 	JWAOO_TOY_EVT_FLASH_ERROR,
 };
 
+enum
+{
+	JWAOO_SENSOR_POLL_MODE_NONE,
+	JWAOO_SENSOR_POLL_MODE_SLOW,
+	JWAOO_SENSOR_POLL_MODE_FAST,
+};
+
 #pragma pack(1)
 
 struct jwaoo_toy_command
@@ -171,7 +178,11 @@ struct jwaoo_toy_env_tag
 	uint8_t flash_data_cache[JWAOO_TOY_FLASH_CACHE_SIZE];
 #endif
 
+	uint8_t fdc1004_dead;
+	uint8_t mpu6050_dead;
+
 	bool sensor_enable;
+	uint8_t sensor_poll_mode;
 	uint16_t sensor_poll_delay;
 };
 
@@ -211,6 +222,7 @@ uint8_t jwaoo_toy_check_val_len(uint8_t char_code, uint8_t val_len);
  */
 void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
+uint8_t jwaoo_toy_sensor_poll(void);
 uint8_t jwaoo_toy_write_data(uint16_t attr, const uint8_t *data, int size);
 uint8_t jwaoo_toy_send_notify(uint16_t attr, const uint8_t *data, int size);
 uint8_t jwaoo_toy_send_command_u8(uint8_t type, uint8_t value);

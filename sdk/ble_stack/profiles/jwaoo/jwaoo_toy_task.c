@@ -34,8 +34,6 @@
 #include "prf_utils.h"
 #include "attm_util.h"
 #include "atts_util.h"
-#include "mpu6050.h"
-#include "fdc1004.h"
 
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
 static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_COMMAND);
@@ -164,15 +162,8 @@ static int jwaoo_toy_sensor_poll_req_handler(ke_msg_id_t const msgid,
 {
 	if (jwaoo_toy_env.notify_busy) {
 		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
-	} else {
-		uint8_t buff[6];
-
-		MPU6050_I2C_BufferRead(MPU6050_DEFAULT_ADDRESS, buff, MPU6050_RA_ACCEL_XOUT_H, sizeof(buff));
-		buff[1] = buff[2];
-		buff[2] = buff[4];
-		buff[3] = fdc1004_get_depth();
-		jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, 4);
-
+	} else if (jwaoo_toy_env.sensor_poll_mode == JWAOO_SENSOR_POLL_MODE_SLOW) {
+		jwaoo_toy_sensor_poll();
 		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, jwaoo_toy_env.sensor_poll_delay);
 	}
 
@@ -260,6 +251,9 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
 {
 	if (param->req_type == GATTC_NOTIFY) {
 		jwaoo_toy_env.notify_busy = false;
+		if (jwaoo_toy_env.sensor_poll_mode == JWAOO_SENSOR_POLL_MODE_FAST) {
+			jwaoo_toy_sensor_poll();
+		}
 	}
 
     return (KE_MSG_CONSUMED);

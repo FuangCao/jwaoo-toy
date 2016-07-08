@@ -34,6 +34,8 @@
 #include "jwaoo_toy_task.h"
 #include "prf_utils.h"
 #include "app_easy_timer.h"
+#include "mpu6050.h"
+#include "fdc1004.h"
 
 /*
  * MACROS
@@ -69,19 +71,64 @@ extern const SPI_FLASH_DEVICE_PARAMETERS_BY_JEDEC_ID_t *spi_flash_detected_devic
  ****************************************************************************************
  */
 
+uint8_t jwaoo_toy_sensor_poll(void)
+{
+	uint8_t buff[6];
+
+	if (jwaoo_toy_env.mpu6050_dead < 10) {
+		if (i2c_read_data(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_ACCEL_XOUT_H, buff, sizeof(buff)) < 0) {
+			jwaoo_toy_env.mpu6050_dead++;
+			buff[0] = buff[1] = buff[2] = 0;
+		} else {
+			jwaoo_toy_env.mpu6050_dead = 0;
+			buff[1] = buff[2];
+			buff[2] = buff[4];
+		}
+	} else {
+		buff[0] = buff[1] = buff[2] = 0;
+	}
+
+	if (jwaoo_toy_env.fdc1004_dead < 10) {
+		int depth = fdc1004_get_depth();
+		if (depth < 0) {
+			jwaoo_toy_env.fdc1004_dead++;
+			buff[3] = 0;
+		} else {
+			jwaoo_toy_env.fdc1004_dead = 0;
+			buff[3] = depth;
+		}
+	} else {
+		buff[3] = 0;
+	}
+
+	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, 4);
+}
+
 static bool jwaoo_toy_sensor_set_enable(bool enable)
 {
-	println("sensor_enable = %d", enable);
+	println("sensor_enable = %d, sensor_poll_delay = %d", enable, jwaoo_toy_env.sensor_poll_delay);
 
 	if (enable) {
-		if (ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
-			return true;
-		}
+		if (jwaoo_toy_env.sensor_poll_delay < 2) {
+			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_FAST;
 
-		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
+			ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
+			if (!jwaoo_toy_env.notify_busy) {
+				jwaoo_toy_sensor_poll();
+			}
+		} else {
+			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_SLOW;
+
+			if (!ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
+				ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
+			}
+		}
 	} else {
+		jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_NONE;
 		ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
 	}
+
+	println("sensor_poll_mode = %d", jwaoo_toy_env.sensor_poll_mode);
 
 	return true;
 }
@@ -103,6 +150,8 @@ void jwaoo_toy_init(void)
 void jwaoo_toy_enable(uint16_t conhdl) 
 {
 	jwaoo_toy_env.notify_busy = false;
+	jwaoo_toy_env.fdc1004_dead = 0;
+	jwaoo_toy_env.mpu6050_dead = 0;
 
 	if (jwaoo_toy_env.sensor_enable) {
 		jwaoo_toy_sensor_set_enable(true);
@@ -141,10 +190,6 @@ uint8_t jwaoo_toy_send_notify(uint16_t attr, const uint8_t *data, int size)
 {
 	uint8_t ret;
 	uint16_t handle = jwaoo_toy_env.handle + attr;
-
-	if (jwaoo_toy_env.notify_busy) {
-		return ATT_ERR_APP_ERROR;
-	}
 
 	jwaoo_toy_env.notify_busy = true;
 
@@ -345,14 +390,14 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		}
 		break;
 
-	case JWAOO_TOY_CMD_SENSOR_SET_DELAY: {
-		uint32_t delay = ((const struct jwaoo_toy_command_u32 *) command)->value / 10;
-		if (delay > 0) {
-			jwaoo_toy_env.sensor_poll_delay = delay;
-			success = true;
+	case JWAOO_TOY_CMD_SENSOR_SET_DELAY:
+		jwaoo_toy_env.sensor_poll_delay = ((const struct jwaoo_toy_command_u32 *) command)->value / 10;
+		if (jwaoo_toy_env.sensor_enable) {
+			jwaoo_toy_sensor_set_enable(true);
 		}
+
+		success = true;
 		break;
-	}
 
 	default:
 		break;

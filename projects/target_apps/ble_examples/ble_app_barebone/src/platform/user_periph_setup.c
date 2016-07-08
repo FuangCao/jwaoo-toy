@@ -74,8 +74,8 @@ void set_pad_functions(void)        // set gpio port function mode
 
 	LED1_CONFIG;
 	LED2_CONFIG;
-	BLUZZ_CONFIG;
-	RELAY_CONFIG;
+	// BLUZZ_CONFIG;
+	// RELAY_CONFIG;
 
 	GPIO_ConfigurePin(SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN, OUTPUT, PID_SPI_EN, true);
 	GPIO_ConfigurePin(SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, OUTPUT, PID_SPI_CLK, false);
