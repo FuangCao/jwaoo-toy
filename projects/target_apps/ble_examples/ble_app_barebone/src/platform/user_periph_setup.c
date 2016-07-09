@@ -94,15 +94,7 @@ i.e.
 
 static void app_spi_flash_init(void)
 {
-	int ret;
-	SPI_Pad_t flash_cs_pad = { SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN };
-
-	spi_init(&flash_cs_pad, SPI_MODE_8BIT, SPI_ROLE_MASTER, SPI_CLK_IDLE_POL_LOW, SPI_PHA_MODE_0, SPI_MINT_DISABLE, SPI_XTAL_DIV_8);
-
-	spi_flash_release_from_power_down();
-
-	ret = spi_flash_auto_detect();
-	if (ret == SPI_FLASH_AUTO_DETECT_NOT_DETECTED)
+	if (spi_flash_enable(SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN) < 0)
 	{
 		spi_flash_init(SPI_FLASH_DEFAULT_SIZE, SPI_FLASH_DEFAULT_PAGE);
 	}

@@ -26,6 +26,11 @@
 #include "spi.h"
 #include <stdint.h>
 
+#ifndef NELEM
+#define NELEM(a) \
+	(sizeof(a) / sizeof((a)[0]))
+#endif
+
 /*
  * DEFINES
  ****************************************************************************************
@@ -41,10 +46,6 @@
         - AT25DS011/Adesto
         - MX25V1006E/Macronix (embedded in DA14583)
 */
-
-// Definitions for the various SPI Flash Devices
-
-#define SPI_FLASH_DEVICES_SUPPORTED_COUNT (4)
 
 // 1. W25X10CL
 #define SPI_FLASH_DEVICE_INDEX_W25X10 0

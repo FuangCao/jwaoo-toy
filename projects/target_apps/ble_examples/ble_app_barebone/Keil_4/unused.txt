@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 08 22:04:07 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Sat Jul 09 14:41:49 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -156,7 +156,6 @@ spi_release <= USED 0
 spi_flash_block_erase <= USED 0
 spi_flash_chip_erase_forced <= USED 0
 spi_flash_configure_memory_protection <= USED 0
-spi_flash_enable <= USED 0
 spi_flash_fill <= USED 0
 spi_flash_page_fill <= USED 0
 spi_flash_power_down <= USED 0

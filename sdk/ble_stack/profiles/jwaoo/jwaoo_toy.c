@@ -62,9 +62,9 @@ static const struct ke_task_desc TASK_DESC_JWAOO_TOY = {
 	.idx_max = JWAOO_TOY_TASK_COUNT
 };
 
+extern uint32_t spi_flash_jedec_id;
 extern uint32_t spi_flash_size;
 extern uint32_t spi_flash_page_size;
-extern const SPI_FLASH_DEVICE_PARAMETERS_BY_JEDEC_ID_t *spi_flash_detected_device;
 
 /*
  * FUNCTION DEFINITIONS
@@ -266,6 +266,8 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 {
 	bool success = false;
 
+	println("command = %d", command->type);
+
 	switch (command->type) {
 	case JWAOO_TOY_CMD_NOP:
 		success = true;
@@ -294,11 +296,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		break;
 
 	case JWAOO_TOY_CMD_FLASH_ID:
-		if (spi_flash_detected_device == NULL) {
-			break;
-		}
-
-		jwaoo_toy_send_response_u32(spi_flash_detected_device->jedec_id);
+		jwaoo_toy_send_response_u32(spi_flash_jedec_id);
 		return;
 
 	case JWAOO_TOY_CMD_FLASH_SIZE:
@@ -322,6 +320,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 	case JWAOO_TOY_CMD_FLASH_ERASE:
 		if (jwaoo_toy_env.flash_write_enable) {
 			if (spi_flash_chip_erase() != ERR_OK) {
+				println("Failed to spi_flash_chip_erase");
 				break;
 			}
 

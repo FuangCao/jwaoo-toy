@@ -21,6 +21,7 @@
 // local copy of FLASH setup parameters
 int16_t spi_flash_device_index;
 const SPI_FLASH_DEVICE_PARAMETERS_BY_JEDEC_ID_t *spi_flash_detected_device;
+uint32_t spi_flash_jedec_id;
 uint32_t spi_flash_size;         
 uint32_t spi_flash_page_size;
 
@@ -57,13 +58,12 @@ void spi_flash_init(uint32_t spi_flash_size_param, uint32_t spi_flash_page_size_
  */
 int8_t spi_flash_auto_detect(void)
 {
-	uint32_t jedec_id;
 	uint16_t i;
-	
-	jedec_id = spi_read_flash_jedec_id();
-	for (i=0; i<SPI_FLASH_DEVICES_SUPPORTED_COUNT; i++)
+
+	spi_flash_jedec_id = spi_read_flash_jedec_id();
+	for (i=0; i<NELEM(SPI_FLASH_KNOWN_DEVICES_PARAMETERS_LIST); i++)
 	{
-		if ( (jedec_id & SPI_FLASH_KNOWN_DEVICES_PARAMETERS_LIST[i].jedec_id_matching_bitmask) ==\
+		if ( (spi_flash_jedec_id & SPI_FLASH_KNOWN_DEVICES_PARAMETERS_LIST[i].jedec_id_matching_bitmask) ==\
 				 (SPI_FLASH_KNOWN_DEVICES_PARAMETERS_LIST[i].jedec_id & SPI_FLASH_KNOWN_DEVICES_PARAMETERS_LIST[i].jedec_id_matching_bitmask) )
 		{
 			spi_flash_device_index = i;
