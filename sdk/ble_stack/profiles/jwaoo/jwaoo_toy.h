@@ -173,6 +173,7 @@ struct jwaoo_toy_env_tag
     uint16_t handle;
 	bool notify_busy;
 
+	bool flash_upgrade;
 	bool flash_write_ok;
 	bool flash_write_enable;
 	uint32_t flash_write_address;

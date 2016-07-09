@@ -286,6 +286,10 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		return;
 
 	case JWAOO_TOY_CMD_REBOOT:
+		if (jwaoo_toy_env.flash_upgrade) {
+			break;
+		}
+
 		success = (app_easy_timer(100, jwaoo_toy_reboot_timer) != EASY_TIMER_INVALID_TIMER);
 		break;
 
@@ -329,7 +333,13 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		break;
 
 	case JWAOO_TOY_CMD_FLASH_READ: {
-		uint32_t address = ((const struct jwaoo_toy_command_u32 *) command)->value;
+		uint32_t address;
+
+		if (jwaoo_toy_env.flash_upgrade) {
+			break;
+		}
+
+		address = ((const struct jwaoo_toy_command_u32 *) command)->value;
 		if (address < spi_flash_size) {
 			uint8_t buff[JWAOO_TOY_MAX_FLASH_DATA_SIZE];
 			int length = spi_flash_size - address;
@@ -363,6 +373,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 #if JWAOO_TOY_FLASH_CACHE_SIZE > 0
 			jwaoo_toy_env.flash_cache_size = 0;
 #endif
+			jwaoo_toy_env.flash_upgrade = true;
 			success = true;
 		}
 		break;
@@ -377,11 +388,16 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 #endif
 
 			jwaoo_toy_env.flash_write_enable = false;
+			jwaoo_toy_env.flash_upgrade = false;
 			success = true;
 		}
 		break;
 
 	case JWAOO_TOY_CMD_SENSOR_ENABLE:
+		if (jwaoo_toy_env.flash_upgrade) {
+			break;
+		}
+
 		if (command->bytes[0]) {
 			success = jwaoo_toy_sensor_set_enable(true);
 			jwaoo_toy_env.sensor_enable = success;
@@ -392,6 +408,10 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		break;
 
 	case JWAOO_TOY_CMD_SENSOR_SET_DELAY:
+		if (jwaoo_toy_env.flash_upgrade) {
+			break;
+		}
+
 		jwaoo_toy_env.sensor_poll_delay = ((const struct jwaoo_toy_command_u32 *) command)->value / 10;
 		if (jwaoo_toy_env.sensor_enable) {
 			jwaoo_toy_sensor_set_enable(true);
