@@ -109,18 +109,18 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 	println("sensor_enable = %d, sensor_poll_delay = %d", enable, jwaoo_toy_env.sensor_poll_delay);
 
 	if (enable) {
-		if (jwaoo_toy_env.sensor_poll_delay < 2) {
+		if (jwaoo_toy_env.sensor_poll_delay > 0) {
+			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_SLOW;
+
+			if (!ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
+				ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
+			}
+		} else {
 			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_FAST;
 
 			ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
 			if (!jwaoo_toy_env.notify_busy) {
 				jwaoo_toy_sensor_poll();
-			}
-		} else {
-			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_SLOW;
-
-			if (!ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
-				ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
 			}
 		}
 	} else {
@@ -269,7 +269,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 	println("command = %d", command->type);
 
 	switch (command->type) {
-	case JWAOO_TOY_CMD_NOP:
+	case JWAOO_TOY_CMD_NOOP:
 		success = true;
 		break;
 
