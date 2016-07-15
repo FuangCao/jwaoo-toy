@@ -43,7 +43,6 @@
 
 #define JWAOO_TOY_IDENTIFY				"JwaooToy"
 #define JWAOO_TOY_VERSION				0x20160702
-#define JWAOO_TOY_FLASH_CACHE_SIZE		0
 
 #define jwaoo_toy_send_response_bool(value) \
 	jwaoo_toy_send_command_u8(JWAOO_TOY_RSP_BOOL, value);
@@ -116,6 +115,8 @@ enum
 	JWAOO_TOY_CMD_FLASH_WRITE_ENABLE,
 	JWAOO_TOY_CMD_FLASH_WRITE_START,
 	JWAOO_TOY_CMD_FLASH_WRITE_FINISH,
+	JWAOO_TOY_CMD_FLASH_READ_BD_ADDR,
+	JWAOO_TOY_CMD_FLASH_WRITE_BD_ADDR,
 	JWAOO_TOY_CMD_SENSOR_ENABLE = 70,
 	JWAOO_TOY_CMD_SENSOR_SET_DELAY,
 	JWAOO_TOY_CMD_MOTO_ENABLE = 80,
@@ -161,6 +162,17 @@ struct jwaoo_toy_command_u32
 	uint32_t value;
 };
 
+struct jwaoo_toy_command_flash_write_finish
+{
+	uint8_t type;
+	uint8_t crc;
+	uint16_t length;
+};
+
+struct jwaoo_toy_device_data {
+	uint8_t bd_addr[6];
+};
+
 #pragma pack()
 
 ///Attributes State Machine
@@ -175,14 +187,11 @@ struct jwaoo_toy_env_tag
 	bool notify_busy;
 
 	bool flash_upgrade;
-	bool flash_write_ok;
 	bool flash_write_enable;
-	uint32_t flash_write_address;
-
-#if JWAOO_TOY_FLASH_CACHE_SIZE > 0
-	uint8_t flash_cache_size;
-	uint8_t flash_data_cache[JWAOO_TOY_FLASH_CACHE_SIZE];
-#endif
+	bool flash_write_success;
+	uint8_t flash_write_crc;
+	uint16_t flash_write_length;
+	uint32_t flash_write_offset;
 
 	uint8_t fdc1004_dead;
 	uint8_t mpu6050_dead;
@@ -190,6 +199,8 @@ struct jwaoo_toy_env_tag
 	bool sensor_enable;
 	uint8_t sensor_poll_mode;
 	uint16_t sensor_poll_delay;
+
+	struct jwaoo_toy_device_data device_data;
 };
 
 /*
@@ -238,7 +249,7 @@ uint8_t jwaoo_toy_send_command_data(uint8_t type, const uint8_t *data, int size)
 uint8_t jwaoo_toy_send_command_text(uint8_t type, const char *fmt, ...);
 
 void jwaoo_toy_process_command(const struct jwaoo_toy_command *command);
-void jwaoo_toy_process_flash_data(const uint8_t *data, int length);
+bool jwaoo_toy_process_flash_data(const uint8_t *data, int length);
 
 static inline uint8_t jwaoo_toy_send_command(const uint8_t *command, int size)
 {

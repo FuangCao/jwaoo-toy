@@ -296,7 +296,6 @@ int32_t spi_flash_page_program(uint8_t *wr_data_ptr, uint32_t address, uint16_t 
  	return spi_flash_wait_till_ready();
 }
 
-
 /**
  ****************************************************************************************
  * @brief Issue a command to Erase a given address

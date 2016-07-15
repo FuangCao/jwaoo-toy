@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Thu Jul 14 10:59:20 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 15 19:41:25 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -119,6 +119,8 @@ dummyf <= USED 0
 ;FILE jwaoo_toy.o
 jwaoo_toy_send_command_data <= USED 0
 jwaoo_toy_send_command_u16 <= USED 0
+jwaoo_toy_write_bd_addr <= USED 0
+jwaoo_toy_write_device_data <= USED 0
 ;FILE ke_task.obj
 ;FILE llc.obj
 ;FILE mpu6050.o
@@ -153,7 +155,7 @@ rf_nfm_is_enabled <= USED 0
 spi_disable <= USED 0
 spi_release <= USED 0
 ;FILE spi_flash.o
-spi_flash_block_erase <= USED 0
+spi_flash_chip_erase <= USED 0
 spi_flash_chip_erase_forced <= USED 0
 spi_flash_configure_memory_protection <= USED 0
 spi_flash_fill <= USED 0
