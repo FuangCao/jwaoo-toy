@@ -311,7 +311,7 @@ static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
 
 	switch (attr) {
 	case JWAOO_TOY_ATTR_COMMAND_DATA:
-		jwaoo_toy_process_command((struct jwaoo_toy_command *) param->value);
+		jwaoo_toy_process_command((struct jwaoo_toy_command *) param->value, param->length);
 		break;
 
 	case JWAOO_TOY_ATTR_FLASH_DATA:

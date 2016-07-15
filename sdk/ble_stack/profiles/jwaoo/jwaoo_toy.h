@@ -169,7 +169,7 @@ struct jwaoo_toy_command_flash_write_finish
 	uint16_t length;
 };
 
-struct jwaoo_toy_device_data {
+struct jwaoo_toy_device_data_tag {
 	uint8_t bd_addr[6];
 };
 
@@ -199,8 +199,6 @@ struct jwaoo_toy_env_tag
 	bool sensor_enable;
 	uint8_t sensor_poll_mode;
 	uint16_t sensor_poll_delay;
-
-	struct jwaoo_toy_device_data device_data;
 };
 
 /*
@@ -209,6 +207,8 @@ struct jwaoo_toy_env_tag
  */
 
 extern struct jwaoo_toy_env_tag jwaoo_toy_env;
+extern struct jwaoo_toy_device_data_tag jwaoo_toy_device_data;
+
 
 /*
  * FUNCTION DECLARATIONS
@@ -240,6 +240,7 @@ uint8_t jwaoo_toy_check_val_len(uint8_t char_code, uint8_t val_len);
 void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
 uint8_t jwaoo_toy_sensor_poll(void);
+bool jwaoo_toy_read_device_data(void);
 uint8_t jwaoo_toy_write_data(uint16_t attr, const uint8_t *data, int size);
 uint8_t jwaoo_toy_send_notify(uint16_t attr, const uint8_t *data, int size);
 uint8_t jwaoo_toy_send_command_u8(uint8_t type, uint8_t value);
@@ -248,8 +249,8 @@ uint8_t jwaoo_toy_send_command_u32(uint8_t type, uint32_t value);
 uint8_t jwaoo_toy_send_command_data(uint8_t type, const uint8_t *data, int size);
 uint8_t jwaoo_toy_send_command_text(uint8_t type, const char *fmt, ...);
 
-void jwaoo_toy_process_command(const struct jwaoo_toy_command *command);
-bool jwaoo_toy_process_flash_data(const uint8_t *data, int length);
+void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t length);
+bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length);
 
 static inline uint8_t jwaoo_toy_send_command(const uint8_t *command, int size)
 {

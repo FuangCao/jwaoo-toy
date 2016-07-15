@@ -29,6 +29,7 @@
 #include "i2c.h"
 #include "mpu6050.h"
 #include "fdc1004.h"
+#include "jwaoo_toy.h"
 
 #if DEVELOPMENT_DEBUG
 
@@ -124,6 +125,7 @@ void periph_init(void)
 #endif
 
 	app_spi_flash_init();
+	jwaoo_toy_read_device_data();
 
 	i2c_init(I2C_SPEED_400K, I2C_ADDRESS_MODE_7BIT);
 	MPU6050_Initialize();

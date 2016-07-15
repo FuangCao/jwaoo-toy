@@ -31,6 +31,7 @@
 
 #include "rwip_config.h"
 #include "user_config.h"
+#include "jwaoo_toy.h"
 
 
 const struct nvds_data_struct nvds_data_storage __attribute__((section("nvds_data_storage_area")))
@@ -71,9 +72,24 @@ const struct nvds_data_struct nvds_data_storage __attribute__((section("nvds_dat
 ;
 
 /// Device BD address
+#if BLE_JWAOO_TOY_SERVER == 0
 struct bd_addr dev_bdaddr __attribute__((section("retention_mem_area0"), zero_init));
+#endif
+
 extern struct nvds_data_struct *nvds_data_ptr;
 
+static bool bd_address_is_valid(const uint8_t bd_addr[6])
+{
+	int i;
+
+	for (i = 0; i < 6; i++) {
+		if (bd_addr[i] != 0x00 && bd_addr[i] != 0xFF) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 uint8_t custom_nvds_get_func(uint8_t tag, nvds_tag_len_t * lengthPtr, uint8_t *buf)
 {
@@ -84,6 +100,18 @@ uint8_t custom_nvds_get_func(uint8_t tag, nvds_tag_len_t * lengthPtr, uint8_t *b
     {
         case NVDS_TAG_BD_ADDRESS:
         {
+#if BLE_JWAOO_TOY_SERVER
+			if (bd_address_is_valid(jwaoo_toy_device_data.bd_addr)) {
+				int i;
+
+				for (i = 0; i < 6; i++) {
+					buf[i] = jwaoo_toy_device_data.bd_addr[5 - i];
+				}
+
+				*lengthPtr = NVDS_LEN_BD_ADDRESS;
+				return NVDS_OK;
+			}
+#else
             //check if dev_bdaddr is not zero
             if(memcmp(&dev_bdaddr, &co_null_bdaddr, NVDS_LEN_BD_ADDRESS))
             {
@@ -91,6 +119,7 @@ uint8_t custom_nvds_get_func(uint8_t tag, nvds_tag_len_t * lengthPtr, uint8_t *b
                 *lengthPtr = NVDS_LEN_BD_ADDRESS;
                 return NVDS_OK;
             }
+#endif
             break;
         }
         
@@ -139,8 +168,12 @@ void nvds_read_bdaddr_from_otp()
     else
         otp_bdaddr = (uint8_t *)0x20000000 + BDADDR_OFFSET;   //where in OTP header is BDADDR
 
-    
-    memcpy(&dev_bdaddr, otp_bdaddr, sizeof(dev_bdaddr));
+#if BLE_JWAOO_TOY_SERVER
+	memcpy(jwaoo_toy_device_data.bd_addr, otp_bdaddr, sizeof(jwaoo_toy_device_data.bd_addr));
+#else
+	memcpy(&dev_bdaddr, otp_bdaddr, sizeof(dev_bdaddr));
+#endif
+
     SetBits16(CLK_AMBA_REG, OTP_ENABLE, 0);     //disable OTP clock    
 }
 

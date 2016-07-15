@@ -60,6 +60,7 @@
  */
 
 struct jwaoo_toy_env_tag jwaoo_toy_env __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
+struct jwaoo_toy_device_data_tag jwaoo_toy_device_data __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
 
 static const struct ke_task_desc TASK_DESC_JWAOO_TOY = {
 	.state_handler = jwaoo_toy_state_handler,
@@ -140,20 +141,24 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 	return true;
 }
 
-bool jwaoo_toy_read_device_data(void *buff, uint32_t size)
+bool jwaoo_toy_read_device_data(void)
 {
 	int32_t rdlen;
+	const uint8_t *bd_addr = jwaoo_toy_device_data.bd_addr;
 
-	rdlen = spi_flash_read_data(buff, SPI_PART_DEVICE_DATA, size);
-	if (rdlen != size) {
+	rdlen = spi_flash_read_data((uint8_t *) &jwaoo_toy_device_data, SPI_PART_DEVICE_DATA, sizeof(jwaoo_toy_device_data));
+	if (rdlen != sizeof(struct jwaoo_toy_device_data_tag)) {
 		println("Failed to spi_flash_read_data: %d", rdlen);
 		return false;
 	}
 
+	println("bd_addr: %02x:%02x:%02x:%02x:%02x:%02x",
+		bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
+
 	return true;
 }
 
-bool jwaoo_toy_write_device_data(const void *buff, uint32_t size)
+bool jwaoo_toy_write_device_data(void)
 {
 	int8_t err;
 	int32_t wrlen;
@@ -164,8 +169,8 @@ bool jwaoo_toy_write_device_data(const void *buff, uint32_t size)
 		return false;
 	}
 
-	wrlen = spi_flash_write_data((uint8_t *) buff, SPI_PART_DEVICE_DATA, size);
-	if (wrlen != size) {
+	wrlen = spi_flash_write_data((uint8_t *) &jwaoo_toy_device_data, SPI_PART_DEVICE_DATA, sizeof(jwaoo_toy_device_data));
+	if (wrlen != sizeof(jwaoo_toy_device_data)) {
 		println("Failed to spi_flash_write_data: %d", err);
 		return false;
 	}
@@ -175,11 +180,9 @@ bool jwaoo_toy_write_device_data(const void *buff, uint32_t size)
 
 bool jwaoo_toy_write_bd_addr(const uint8_t bd_addr[6])
 {
-	struct jwaoo_toy_device_data *device_data = &jwaoo_toy_env.device_data;
+	memcpy(jwaoo_toy_device_data.bd_addr, bd_addr, 6);
 
-	memcpy(&device_data->bd_addr, bd_addr, 6);
-
-	return jwaoo_toy_write_device_data(device_data, sizeof(struct jwaoo_toy_device_data));
+	return jwaoo_toy_write_device_data();
 }
 
 bool jwaoo_toy_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size)
@@ -231,7 +234,6 @@ void jwaoo_toy_init(void)
 {
     // Reset environment
     memset(&jwaoo_toy_env, 0, sizeof(jwaoo_toy_env));
-	jwaoo_toy_read_device_data(&jwaoo_toy_env.device_data, sizeof(jwaoo_toy_env.device_data));
 
 	jwaoo_toy_env.sensor_poll_delay = 20;
 
@@ -357,7 +359,7 @@ static void jwaoo_toy_reboot_timer(void)
 	platform_reset(RESET_AFTER_SPOTA_UPDATE);
 }
 
-void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
+void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t length)
 {
 	bool success = false;
 
@@ -407,7 +409,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		return;
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_ENABLE:
-		jwaoo_toy_env.flash_write_enable = (command->bytes[0] > 0);
+		jwaoo_toy_env.flash_write_enable = (length > 1 && command->bytes[0] > 0);
 		success = true;
 		break;
 
@@ -424,38 +426,40 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		}
 		break;
 
-	case JWAOO_TOY_CMD_FLASH_READ: {
-		uint32_t address;
+	case JWAOO_TOY_CMD_FLASH_READ:
+		if (length == 5) {
+			uint32_t address;
 
-		if (jwaoo_toy_env.flash_upgrade) {
-			break;
-		}
-
-		address = ((const struct jwaoo_toy_command_u32 *) command)->value;
-		if (address < spi_flash_size) {
-			uint8_t buff[JWAOO_TOY_MAX_FLASH_DATA_SIZE];
-			int length = spi_flash_size - address;
-
-			if (length > sizeof(buff)) {
-				length = sizeof(buff);
+			if (jwaoo_toy_env.flash_upgrade) {
+				break;
 			}
 
-			length = spi_flash_read_data(buff, address, length);
-			if (length > 0) {
-				success = (jwaoo_toy_write_data(JWAOO_TOY_ATTR_FLASH_DATA, buff, length) == ATT_ERR_NO_ERROR);
+			address = ((const struct jwaoo_toy_command_u32 *) command)->value;
+			if (address < spi_flash_size) {
+				uint8_t buff[JWAOO_TOY_MAX_FLASH_DATA_SIZE];
+				int length = spi_flash_size - address;
+
+				if (length > sizeof(buff)) {
+					length = sizeof(buff);
+				}
+
+				length = spi_flash_read_data(buff, address, length);
+				if (length > 0) {
+					success = (jwaoo_toy_write_data(JWAOO_TOY_ATTR_FLASH_DATA, buff, length) == ATT_ERR_NO_ERROR);
+				}
 			}
 		}
 		break;
-	}
 
-	case JWAOO_TOY_CMD_FLASH_SEEK: {
-		uint32_t offset = ((const struct jwaoo_toy_command_u32 *) command)->value;
-		if (offset < spi_flash_size) {
-			jwaoo_toy_env.flash_write_offset = offset;
-			success = true;
+	case JWAOO_TOY_CMD_FLASH_SEEK:
+		if (length == 5) {
+			uint32_t offset = ((const struct jwaoo_toy_command_u32 *) command)->value;
+			if (offset < spi_flash_size) {
+				jwaoo_toy_env.flash_write_offset = offset;
+				success = true;
+			}
 		}
 		break;
-	}
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_START:
 		if (jwaoo_toy_env.flash_write_enable) {
@@ -470,6 +474,10 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		break;
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_FINISH:
+		if (length != 4) {
+			break;
+		}
+
 		if (jwaoo_toy_env.flash_write_enable && jwaoo_toy_env.flash_write_success) {
 			struct jwaoo_toy_command_flash_write_finish *cmd = (void *) command;
 
@@ -505,12 +513,22 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		}
 		break;
 
+	case JWAOO_TOY_CMD_FLASH_READ_BD_ADDR:
+		jwaoo_toy_send_response_data(jwaoo_toy_device_data.bd_addr, sizeof(jwaoo_toy_device_data.bd_addr));
+		return;
+
+	case JWAOO_TOY_CMD_FLASH_WRITE_BD_ADDR:
+		if (length == 7 && jwaoo_toy_env.flash_write_enable) {
+			success = jwaoo_toy_write_bd_addr(command->bytes);
+		}
+		break;
+
 	case JWAOO_TOY_CMD_SENSOR_ENABLE:
 		if (jwaoo_toy_env.flash_upgrade) {
 			break;
 		}
 
-		if (command->bytes[0]) {
+		if (length > 1 && command->bytes[0]) {
 			success = jwaoo_toy_sensor_set_enable(true);
 			jwaoo_toy_env.sensor_enable = success;
 		} else {
@@ -520,6 +538,10 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command)
 		break;
 
 	case JWAOO_TOY_CMD_SENSOR_SET_DELAY:
+		if (length != 5) {
+			break;
+		}
+
 		if (jwaoo_toy_env.flash_upgrade) {
 			break;
 		}
@@ -560,7 +582,7 @@ static bool jwaoo_toy_process_flash_data_safe(const uint8_t *data, int length)
 	return true;
 }
 
-bool jwaoo_toy_process_flash_data(const uint8_t *data, int length)
+bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length)
 {
 	if (jwaoo_toy_env.flash_write_enable) {
 		if (jwaoo_toy_process_flash_data_safe(data, length)) {
