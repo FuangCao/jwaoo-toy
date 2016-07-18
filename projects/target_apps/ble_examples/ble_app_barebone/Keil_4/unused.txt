@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 18 18:28:56 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 18 20:43:40 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -138,6 +138,20 @@ MPU6050_TestDumpRawAccelGyro <= USED 0
 ;FILE prf_utils.o
 prf_pack_date_time <= USED 0
 prf_unpack_date_time <= USED 0
+;FILE pwm.o
+timer0_disable_irq <= USED 0
+timer0_enable_irq <= USED 0
+timer0_init <= USED 0
+timer0_register_callback <= USED 0
+timer0_release <= USED 0
+timer0_set <= USED 0
+timer0_set_pwm_high_counter <= USED 0
+timer0_set_pwm_low_counter <= USED 0
+timer0_set_pwm_on_counter <= USED 0
+timer0_start <= USED 0
+timer0_stop <= USED 0
+timer2_set_pwm_frequency <= USED 0
+timer2_stop <= USED 0
 ;FILE rf_580.o
 rf_nfm_disable <= USED 0
 rf_nfm_enable <= USED 0

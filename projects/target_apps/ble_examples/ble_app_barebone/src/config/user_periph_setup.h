@@ -47,6 +47,7 @@
 //*** <<< end of configuration section >>>    ***
 
 #define KB(a)				((a) << 10)
+#define LED_LEVEL_MAX		10
 
 #define LED1_GPIO_PORT		GPIO_PORT_1
 #define LED1_GPIO_PIN		GPIO_PIN_0
@@ -109,6 +110,33 @@
 #define KEY4_GPIO_PORT		GPIO_PORT_2
 #define KEY4_GPIO_PIN		GPIO_PIN_4
 #define KEY4_GPIO_IRQ		GPIO3_IRQn
+
+#define LEDR_GPIO_PORT		GPIO_PORT_2
+#define LEDR_GPIO_PIN		GPIO_PIN_6
+#define LEDR_RESERVE		RESERVE_GPIO(LEDR, LEDR_GPIO_PORT, LEDR_GPIO_PIN, PID_PWM2)
+#define LEDR_LEVEL(level)	LED_SET_LEVEL(R, 2, level)
+
+#define LEDG_GPIO_PORT		GPIO_PORT_2
+#define LEDG_GPIO_PIN		GPIO_PIN_8
+#define LEDG_RESERVE		RESERVE_GPIO(LEDG, LEDG_GPIO_PORT, LEDG_GPIO_PIN, PID_PWM3)
+#define LEDG_LEVEL(level)	LED_SET_LEVEL(G, 3, level)
+
+#define LEDB_GPIO_PORT		GPIO_PORT_2
+#define LEDB_GPIO_PIN		GPIO_PIN_9
+#define LEDB_RESERVE		RESERVE_GPIO(LEDB, LEDB_GPIO_PORT, LEDB_GPIO_PIN, PID_PWM4)
+#define LEDB_LEVEL(level)	LED_SET_LEVEL(B, 4, level)
+
+#define LED_SET_LEVEL(color, pwm, level) \
+	do { \
+		if (level > 0) { \
+			timer2_set_sw_pause(PWM_2_3_4_SW_PAUSE_ENABLED); \
+			timer2_set_pwm##pwm##_duty_cycle(LED_LEVEL_MAX - (level)); \
+			timer2_set_sw_pause(PWM_2_3_4_SW_PAUSE_DISABLED); \
+			GPIO_ConfigurePin(LED##color##_GPIO_PORT, LED##color##_GPIO_PIN, OUTPUT, PID_PWM##pwm, true); \
+		} else { \
+			GPIO_ConfigurePin(LED##color##_GPIO_PORT, LED##color##_GPIO_PIN, OUTPUT, PID_GPIO, true); \
+		} \
+	} while (0)
 
 /****************************************************************************************/
 /* i2c eeprom configuration                                                             */

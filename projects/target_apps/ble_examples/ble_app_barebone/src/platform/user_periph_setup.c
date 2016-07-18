@@ -27,6 +27,7 @@
 #include "uart.h"                    // UART initialization
 #include "spi_flash.h"
 #include "i2c.h"
+#include "pwm.h"
 #include "mpu6050.h"
 #include "fdc1004.h"
 #include "jwaoo_toy.h"
@@ -65,6 +66,10 @@ i.e.
 	KEY_GPIO_RESERVE(3);
 #endif
 	KEY_GPIO_RESERVE(4);
+
+	LEDR_RESERVE;
+	LEDG_RESERVE;
+	LEDB_RESERVE;
 
 	RESERVE_GPIO(SPI_CLK, SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, PID_SPI_CLK);
 	RESERVE_GPIO(SPI_DO, SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, PID_SPI_DO);
@@ -123,12 +128,30 @@ static void app_spi_flash_init(void)
 
 static void jwaoo_toy_key1_isr(void)
 {
+	static uint8_t level;
+
 	jwaoo_toy_report_key(1);
+
+	if (++level > LED_LEVEL_MAX) {
+		level = 0;
+	}
+
+	println("LEDG_LEVEL = %d", level);
+	LEDG_LEVEL(level);
 }
 
 static void jwaoo_toy_key2_isr(void)
 {
+	static uint8_t level;
+
 	jwaoo_toy_report_key(2);
+
+	if (++level > LED_LEVEL_MAX) {
+		level = 0;
+	}
+
+	println("LEDR_LEVEL = %d", level);
+	LEDR_LEVEL(level);
 }
 
 #ifdef KEY3_GPIO_IRQ
@@ -140,7 +163,16 @@ static void jwaoo_toy_key3_isr(void)
 
 static void jwaoo_toy_key4_isr(void)
 {
+	static uint8_t level;
+
 	jwaoo_toy_report_key(4);
+
+	if (++level > LED_LEVEL_MAX) {
+		level = 0;
+	}
+
+	println("LEDB_LEVEL = %d", level);
+	LEDB_LEVEL(level);
 }
 
 void periph_init(void)
@@ -172,6 +204,13 @@ void periph_init(void)
 	KEY_IRQ_CONFIG(3, jwaoo_toy_key3_isr);
 #endif
 	KEY_IRQ_CONFIG(4, jwaoo_toy_key4_isr);
+
+	set_tmr_enable(CLK_PER_REG_TMR_ENABLED);
+	set_tmr_div(CLK_PER_REG_TMR_DIV_8);
+	timer2_init(HW_CAN_NOT_PAUSE_PWM_2_3_4, PWM_2_3_4_SW_PAUSE_ENABLED, LED_LEVEL_MAX);
+	LEDR_LEVEL(0);
+	LEDG_LEVEL(0);
+	LEDB_LEVEL(0);
 
 	app_spi_flash_init();
 	jwaoo_toy_read_device_data();
