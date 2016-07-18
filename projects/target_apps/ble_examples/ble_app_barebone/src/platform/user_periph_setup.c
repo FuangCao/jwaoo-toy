@@ -53,8 +53,18 @@ i.e.
 
 	LED1_RESERVE;
 	LED2_RESERVE;
+
+#if 0
 	BLUZZ_RESERVE;
 	RELAY_RESERVE;
+#endif
+
+	KEY_GPIO_RESERVE(1);
+	KEY_GPIO_RESERVE(2);
+#ifdef KEY3_GPIO_PORT
+	KEY_GPIO_RESERVE(3);
+#endif
+	KEY_GPIO_RESERVE(4);
 
 	RESERVE_GPIO(SPI_CLK, SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, PID_SPI_CLK);
 	RESERVE_GPIO(SPI_DO, SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, PID_SPI_DO);
@@ -75,8 +85,18 @@ void set_pad_functions(void)        // set gpio port function mode
 
 	LED1_CONFIG;
 	LED2_CONFIG;
-	// BLUZZ_CONFIG;
-	// RELAY_CONFIG;
+
+#if 0
+	BLUZZ_CONFIG;
+	RELAY_CONFIG;
+#endif
+
+	KEY_GPIO_CONFIG(1);
+	KEY_GPIO_CONFIG(2);
+#ifdef KEY3_GPIO_PORT
+	KEY_GPIO_CONFIG(3);
+#endif
+	KEY_GPIO_CONFIG(4);
 
 	GPIO_ConfigurePin(SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN, OUTPUT, PID_SPI_EN, true);
 	GPIO_ConfigurePin(SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, OUTPUT, PID_SPI_CLK, false);
@@ -101,6 +121,28 @@ static void app_spi_flash_init(void)
 	}
 }
 
+static void jwaoo_toy_key1_isr(void)
+{
+	pr_pos_info();
+}
+
+static void jwaoo_toy_key2_isr(void)
+{
+	pr_pos_info();
+}
+
+#ifdef KEY3_GPIO_IRQ
+static void jwaoo_toy_key3_isr(void)
+{
+	pr_pos_info();
+}
+#endif
+
+static void jwaoo_toy_key4_isr(void)
+{
+	pr_pos_info();
+}
+
 void periph_init(void)
 {
     // Power up peripherals' power domain
@@ -123,6 +165,13 @@ void periph_init(void)
     SetBits16(CLK_PER_REG, UART2_ENABLE, 1);
     uart2_init(UART_BAUDRATE_115K2, 3);
 #endif
+
+	KEY_IRQ_CONFIG(1, jwaoo_toy_key1_isr);
+	KEY_IRQ_CONFIG(2, jwaoo_toy_key2_isr);
+#ifdef KEY3_GPIO_IRQ
+	KEY_IRQ_CONFIG(3, jwaoo_toy_key3_isr);
+#endif
+	KEY_IRQ_CONFIG(4, jwaoo_toy_key4_isr);
 
 	app_spi_flash_init();
 	jwaoo_toy_read_device_data();

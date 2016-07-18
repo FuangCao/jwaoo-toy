@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 15 22:08:06 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 18 17:08:41 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -104,9 +104,7 @@ fdc1004_read_capacity <= USED 0
 ;FILE gapm_util.obj
 ;FILE gpio.o
 GPIO_ConfigurePinPower <= USED 0
-GPIO_EnableIRQ <= USED 0
 GPIO_GetIRQInputLevel <= USED 0
-GPIO_RegisterCallback <= USED 0
 GPIO_SetIRQInputLevel <= USED 0
 ;FILE hardfault_handler.o
 ;FILE i2c.o
