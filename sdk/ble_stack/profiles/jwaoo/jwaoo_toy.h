@@ -125,9 +125,10 @@ enum
 
 enum
 {
-	JWAOO_TOY_EVT_KEY_STATE,
+	JWAOO_TOY_EVT_NOOP,
 	JWAOO_TOY_EVT_BATT_INFO,
-	JWAOO_TOY_EVT_FLASH_ERROR,
+	JWAOO_TOY_EVT_KEY_STATE,
+	JWAOO_TOY_EVT_KEY_CLICK,
 };
 
 enum
@@ -256,6 +257,18 @@ bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length);
 static inline uint8_t jwaoo_toy_send_command(const uint8_t *command, int size)
 {
 	return jwaoo_toy_write_data(JWAOO_TOY_ATTR_COMMAND_DATA, command, size);
+}
+
+static inline uint8_t jwaoo_toy_send_event(const uint8_t *event, int size)
+{
+	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_EVENT_DATA, event, size);
+}
+
+static inline uint8_t jwaoo_toy_report_key(uint8_t keycode)
+{
+	uint8_t event[] = { JWAOO_TOY_EVT_KEY_CLICK, keycode };
+
+	return jwaoo_toy_send_event(event, sizeof(event));
 }
 
 #endif //BLE_JWAOO_TOY_SERVER

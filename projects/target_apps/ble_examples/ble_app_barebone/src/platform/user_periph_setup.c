@@ -123,24 +123,24 @@ static void app_spi_flash_init(void)
 
 static void jwaoo_toy_key1_isr(void)
 {
-	pr_pos_info();
+	jwaoo_toy_report_key(1);
 }
 
 static void jwaoo_toy_key2_isr(void)
 {
-	pr_pos_info();
+	jwaoo_toy_report_key(2);
 }
 
 #ifdef KEY3_GPIO_IRQ
 static void jwaoo_toy_key3_isr(void)
 {
-	pr_pos_info();
+	jwaoo_toy_report_key(3);
 }
 #endif
 
 static void jwaoo_toy_key4_isr(void)
 {
-	pr_pos_info();
+	jwaoo_toy_report_key(4);
 }
 
 void periph_init(void)
