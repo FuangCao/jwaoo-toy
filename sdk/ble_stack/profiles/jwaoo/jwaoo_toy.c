@@ -185,7 +185,48 @@ bool jwaoo_toy_write_bd_addr(const uint8_t bd_addr[6])
 	return jwaoo_toy_write_device_data();
 }
 
-bool jwaoo_toy_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size)
+uint8_t jwaoo_toy_calculate_crc(const uint8_t *mem, uint32_t size, uint8_t crc)
+{
+	const uint8_t *mem_end;
+
+	for (mem_end = mem + size; mem < mem_end; mem++) {
+		crc ^= *mem;
+	}
+
+	return crc;
+}
+
+bool jwaoo_toy_flash_check_crc(uint32_t addr, uint32_t size, uint8_t crc_raw)
+{
+	uint8_t crc = 0xFF;
+
+	while (size > 0) {
+		int ret;
+		int length;
+		uint8_t buff[128];
+
+		length = (size > sizeof(buff) ? sizeof(buff) : size);
+
+		ret = spi_flash_read_data(buff, addr, length);
+		if (ret != length) {
+			println("Failed to spi_flash_read_data: %d", ret);
+			return false;
+		}
+
+		crc = jwaoo_toy_calculate_crc(buff, length, crc);
+		addr += length;
+		size -= length;
+	}
+
+	if (crc != crc_raw) {
+		println("crc not match: 0x%02x != 0x%02x", crc, crc_raw);
+		return false;
+	}
+
+	return true;
+}
+
+bool jwaoo_toy_flash_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw)
 {
 	uint8_t crc = 0xFF;
 
@@ -195,7 +236,6 @@ bool jwaoo_toy_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size)
 		int ret;
 		int length;
 		uint8_t buff[128];
-		const uint8_t *p, *p_end;
 
 		length = (size > sizeof(buff) ? sizeof(buff) : size);
 
@@ -211,17 +251,14 @@ bool jwaoo_toy_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size)
 			return false;
 		}
 
-		for (p = buff, p_end = p + length; p < p_end; p++) {
-			crc ^= *p;
-		}
-
+		crc = jwaoo_toy_calculate_crc(buff, length, crc);
 		rdaddr += length;
 		wraddr += length;
 		size -= length;
 	}
 
-	if (crc != jwaoo_toy_env.flash_write_crc) {
-		println("crc not match: 0x%02x != 0x%02x", crc, jwaoo_toy_env.flash_write_crc);
+	if (crc != crc_raw) {
+		println("crc not match: 0x%02x != 0x%02x", crc, crc_raw);
 		return false;
 	}
 
@@ -379,7 +416,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		return;
 
 	case JWAOO_TOY_CMD_BUILD_DATE:
-		jwaoo_toy_send_response_text("%s - %s", __DATE__, __TIME__);
+		jwaoo_toy_send_response_text("%s %s", __DATE__, __TIME__);
 		return;
 
 	case JWAOO_TOY_CMD_REBOOT:
@@ -495,6 +532,14 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 				break;
 			}
 
+			println("jwaoo_toy_flash_check_crc SPI_PART_BACK_CODE");
+
+			if (!jwaoo_toy_flash_check_crc(SPI_PART_BACK_CODE,
+				jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)) {
+				println("Failed to jwaoo_toy_flash_check_crc");
+				break;
+			}
+
 			println("spi_flash_block_erase SPI_PART_FRONT_CODE");
 
 			if (spi_flash_block_erase(SPI_PART_FRONT_CODE, SPI_ERASE_MODE) != ERR_OK) {
@@ -502,8 +547,17 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 				break;
 			}
 
-			if (!jwaoo_toy_copy_code(SPI_PART_BACK_CODE, SPI_PART_FRONT_CODE, jwaoo_toy_env.flash_write_length)) {
+			if (!jwaoo_toy_flash_copy_code(SPI_PART_BACK_CODE, SPI_PART_FRONT_CODE,
+				jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)) {
 				println("Failed to jwaoo_toy_copy_code");
+				break;
+			}
+
+			println("jwaoo_toy_flash_check_crc SPI_PART_FRONT_CODE");
+
+			if (!jwaoo_toy_flash_check_crc(SPI_PART_FRONT_CODE,
+				jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)) {
+				println("Failed to jwaoo_toy_flash_check_crc");
 				break;
 			}
 
@@ -564,7 +618,6 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 static bool jwaoo_toy_process_flash_data_safe(const uint8_t *data, int length)
 {
 	int wrlen;
-	const uint8_t *data_end;
 
 	wrlen = spi_flash_write_data((uint8_t *) data, jwaoo_toy_env.flash_write_offset, length);
 	if (wrlen < 0) {
@@ -572,10 +625,7 @@ static bool jwaoo_toy_process_flash_data_safe(const uint8_t *data, int length)
 		return false;
 	}
 
-	for (data_end = data + wrlen; data < data_end; data++) {
-		jwaoo_toy_env.flash_write_crc ^= *data;
-	}
-
+	jwaoo_toy_env.flash_write_crc = jwaoo_toy_calculate_crc(data, length, jwaoo_toy_env.flash_write_crc);
 	jwaoo_toy_env.flash_write_offset += wrlen;
 	jwaoo_toy_env.flash_write_length += wrlen;
 
