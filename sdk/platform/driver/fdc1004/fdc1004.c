@@ -154,8 +154,8 @@ int fdc1004_init(void)
 	}
 
 	for (i = 0; i < 4; i++) {
-		fdc1004_write_u16(REG_CONF_MEAS1 + i, i << 13 | 7 << 10);
-		fdc1004_write_u16(REG_GAIN_CAL_CIN1 + i, 0xFFFF);
+		fdc1004_write_u16(REG_CONF_MEAS1 + i, i << 13 | 4 << 10 | 3 << 5);
+		// fdc1004_write_u16(REG_GAIN_CAL_CIN1 + i, 0xFFFF);
 	}
 
 	fdc1004_write_u16(REG_FDC_CONF, 3 << 10 | 1 << 8 | 0x00F0);
