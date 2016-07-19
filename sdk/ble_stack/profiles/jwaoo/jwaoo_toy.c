@@ -273,6 +273,8 @@ void jwaoo_toy_init(void)
     memset(&jwaoo_toy_env, 0, sizeof(jwaoo_toy_env));
 
 	jwaoo_toy_env.sensor_poll_delay = 20;
+	jwaoo_toy_env.key_long_click_delay = 300;
+	jwaoo_toy_env.key_multi_click_delay = 30;
 
     // Create JWAOO_TOY task
     ke_task_create(TASK_JWAOO_TOY, &TASK_DESC_JWAOO_TOY);
@@ -342,23 +344,32 @@ uint8_t jwaoo_toy_send_notify(uint16_t attr, const uint8_t *data, int size)
 
 uint8_t jwaoo_toy_send_command_u8(uint8_t type, uint8_t value)
 {
-	struct jwaoo_toy_command_u8 command = { type, value };
+	struct jwaoo_toy_command command = {
+		.type = type,
+		.value8 = value
+	};
 
-	return jwaoo_toy_send_command((uint8_t *) &command, sizeof(command));
+	return jwaoo_toy_send_command((uint8_t *) &command, 2);
 }
 
 uint8_t jwaoo_toy_send_command_u16(uint8_t type, uint16_t value)
 {
-	struct jwaoo_toy_command_u16 command = { type, value };
+	struct jwaoo_toy_command command = {
+		.type = type,
+		.value16 = value
+	};
 
-	return jwaoo_toy_send_command((uint8_t *) &command, sizeof(command));
+	return jwaoo_toy_send_command((uint8_t *) &command, 3);
 }
 
 uint8_t jwaoo_toy_send_command_u32(uint8_t type, uint32_t value)
 {
-	struct jwaoo_toy_command_u32 command = { type, value };
+	struct jwaoo_toy_command command = {
+		.type = type,
+		.value32 = value
+	};
 
-	return jwaoo_toy_send_command((uint8_t *) &command, sizeof(command));
+	return jwaoo_toy_send_command((uint8_t *) &command, 5);
 }
 
 uint8_t jwaoo_toy_send_command_data(uint8_t type, const uint8_t *data, int size)
@@ -400,7 +411,12 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 {
 	bool success = false;
 
-	println("command = %d", command->type);
+	if (length < 1) {
+		println("Invalid command length: %d", length);
+		return;
+	}
+
+	println("command = %d, length = %d", command->type, length);
 
 	switch (command->type) {
 	case JWAOO_TOY_CMD_NOOP:
@@ -446,7 +462,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		return;
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_ENABLE:
-		jwaoo_toy_env.flash_write_enable = (length > 1 && command->bytes[0] > 0);
+		jwaoo_toy_env.flash_write_enable = (length > 1 && command->enable);
 		success = true;
 		break;
 
@@ -471,7 +487,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 				break;
 			}
 
-			address = ((const struct jwaoo_toy_command_u32 *) command)->value;
+			address = command->value32;
 			if (address < spi_flash_size) {
 				uint8_t buff[JWAOO_TOY_MAX_FLASH_DATA_SIZE];
 				int length = spi_flash_size - address;
@@ -490,7 +506,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 
 	case JWAOO_TOY_CMD_FLASH_SEEK:
 		if (length == 5) {
-			uint32_t offset = ((const struct jwaoo_toy_command_u32 *) command)->value;
+			uint32_t offset = command->value32;
 			if (offset < spi_flash_size) {
 				jwaoo_toy_env.flash_write_offset = offset;
 				success = true;
@@ -516,18 +532,16 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		}
 
 		if (jwaoo_toy_env.flash_write_enable && jwaoo_toy_env.flash_write_success) {
-			struct jwaoo_toy_command_flash_write_finish *cmd = (void *) command;
-
-			println("remote: crc = 0x%02x, length = %d", cmd->crc, cmd->length);
+			println("remote: crc = 0x%02x, length = %d", command->crc, command->length);
 			println("local:  crc = 0x%02x, length = %d",
 				jwaoo_toy_env.flash_write_crc, jwaoo_toy_env.flash_write_length);
 
-			if (cmd->crc != jwaoo_toy_env.flash_write_crc) {
+			if (command->crc != jwaoo_toy_env.flash_write_crc) {
 				println("crc not match");
 				break;
 			}
 
-			if (cmd->length != jwaoo_toy_env.flash_write_length) {
+			if (command->length != jwaoo_toy_env.flash_write_length) {
 				println("length not match");
 				break;
 			}
@@ -582,7 +596,11 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 			break;
 		}
 
-		if (length > 1 && command->bytes[0]) {
+		if (length > 1 && command->enable) {
+			if (length > 5) {
+				jwaoo_toy_env.sensor_poll_delay = command->delay32 / 10;
+			}
+
 			success = jwaoo_toy_sensor_set_enable(true);
 			jwaoo_toy_env.sensor_enable = success;
 		} else {
@@ -591,24 +609,47 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		}
 		break;
 
-	case JWAOO_TOY_CMD_SENSOR_SET_DELAY:
-		if (length != 5) {
-			break;
-		}
+	case JWAOO_TOY_CMD_KEY_CLICK_ENABLE:
+		jwaoo_toy_env.key_click_enable = length > 1 && command->enable;
+		success = true;
+		break;
 
-		if (jwaoo_toy_env.flash_upgrade) {
-			break;
-		}
+	case JWAOO_TOY_CMD_KEY_LONG_CLICK_ENABLE:
+		if (length > 1 && command->enable) {
+			jwaoo_toy_env.key_long_click_enable = true;
 
-		jwaoo_toy_env.sensor_poll_delay = ((const struct jwaoo_toy_command_u32 *) command)->value / 10;
-		if (jwaoo_toy_env.sensor_enable) {
-			jwaoo_toy_sensor_set_enable(true);
-		}
+			if (length > 3) {
+				uint16_t delay = command->delay16 / 10;
 
+				if (delay > 0) {
+					jwaoo_toy_env.key_long_click_delay = delay;
+				}
+			}
+		} else {
+			jwaoo_toy_env.key_long_click_enable = false;
+		}
+		success = true;
+		break;
+
+	case JWAOO_TOY_CMD_KEY_MULTI_CLICK_ENABLE:
+		if (length > 1 && command->enable) {
+			jwaoo_toy_env.key_multi_click_enable = true;
+
+			if (length > 3) {
+				uint16_t delay = command->delay16 / 10;
+
+				if (delay > 0) {
+					jwaoo_toy_env.key_multi_click_delay = delay;
+				}
+			}
+		} else {
+			jwaoo_toy_env.key_multi_click_enable = false;
+		}
 		success = true;
 		break;
 
 	default:
+		println("Invalid command: %d", command->type);
 		break;
 	}
 
@@ -649,6 +690,71 @@ bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length)
 	jwaoo_toy_env.flash_write_success = false;
 
 	return false;
+}
+
+uint8_t jwaoo_toy_report_key_value(uint8_t code, uint8_t value)
+{
+	uint8_t event[] = { JWAOO_TOY_EVT_KEY_CLICK, code, value };
+
+	return jwaoo_toy_send_event(event, sizeof(event));
+}
+
+uint8_t jwaoo_toy_report_key_click(uint8_t code, uint8_t count)
+{
+	jwaoo_toy_env.key_click_count = 0;
+
+	println("clicked: count = %d", count);
+
+	if (count > 0) {
+		uint8_t event[] = { JWAOO_TOY_EVT_KEY_CLICK, code, count };
+
+		return jwaoo_toy_send_event(event, sizeof(event));
+	}
+
+	return ATT_ERR_NO_ERROR;
+}
+
+uint8_t jwaoo_toy_report_key_long_click(uint8_t code)
+{
+	uint8_t event[] = { JWAOO_TOY_EVT_KEY_LONG_CLICK, code };
+
+	println("long clicked: code = %d", code);
+
+	jwaoo_toy_env.key_click_count = 0;
+
+	return jwaoo_toy_send_event(event, sizeof(event));
+
+}
+
+void jwaoo_toy_process_key(uint8_t code, uint8_t value)
+{
+	println("code = %d, value = %d", code, value);
+
+	if (jwaoo_toy_env.key_long_click_enable || jwaoo_toy_env.key_multi_click_enable) {
+		ke_timer_clear(JWAOO_TOY_KEY_LONG_CLICK, TASK_JWAOO_TOY);
+		ke_timer_clear(JWAOO_TOY_KEY_MULTI_CLICK, TASK_JWAOO_TOY);
+
+		if (value > 0) {
+			if (code == jwaoo_toy_env.key_click_code) {
+				jwaoo_toy_env.key_click_count++;
+			} else {
+				jwaoo_toy_env.key_click_code = code;
+				jwaoo_toy_env.key_click_count = 1;
+			}
+
+			ke_timer_set(JWAOO_TOY_KEY_LONG_CLICK, TASK_JWAOO_TOY, jwaoo_toy_env.key_long_click_delay);
+		} else if (jwaoo_toy_env.key_multi_click_enable) {
+			ke_timer_set(JWAOO_TOY_KEY_MULTI_CLICK, TASK_JWAOO_TOY, jwaoo_toy_env.key_multi_click_delay);
+		} else {
+			jwaoo_toy_report_key_click(code, jwaoo_toy_env.key_click_count);
+		}
+	} else if (jwaoo_toy_env.key_click_enable) {
+		if (value > 0) {
+			jwaoo_toy_report_key_click(code, 1);
+		}
+	} else {
+		jwaoo_toy_report_key_value(code, value);
+	}
 }
 
 #endif //BLE_JWAOO_TOY_SERVER

@@ -87,12 +87,6 @@
 #define KEY_GPIO_CONFIG(index) \
 	GPIO_ConfigurePin(KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, INPUT_PULLUP, PID_GPIO, true)
 
-#define KEY_IRQ_CONFIG(index, isr) \
-	do { \
-		GPIO_RegisterCallback(KEY##index##_GPIO_IRQ, isr); \
-		GPIO_EnableIRQ(KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, KEY##index##_GPIO_IRQ, true, true, 60); \
-	} while (0)
-
 #define KEY1_GPIO_PORT		GPIO_PORT_2
 #define KEY1_GPIO_PIN		GPIO_PIN_7
 #define KEY1_GPIO_IRQ		GPIO0_IRQn

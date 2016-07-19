@@ -126,53 +126,51 @@ static void app_spi_flash_init(void)
 	}
 }
 
-static void jwaoo_toy_key1_isr(void)
+static uint8_t app_process_key(IRQn_Type irq, uint8_t code, GPIO_PORT port, GPIO_PIN pin)
 {
-	static uint8_t level;
+	uint8_t value;
+	GPIO_IRQ_INPUT_LEVEL level;
 
-	jwaoo_toy_report_key(1);
-
-	if (++level > LED_LEVEL_MAX) {
-		level = 0;
+	if (GPIO_GetPinStatus(port, pin)) {
+		value = 0;
+		level = GPIO_IRQ_INPUT_LEVEL_LOW;
+	} else {
+		value = 1;
+		level = GPIO_IRQ_INPUT_LEVEL_HIGH;
 	}
 
-	println("LEDG_LEVEL = %d", level);
-	LEDG_LEVEL(level);
+	GPIO_SetIRQInputLevel(irq, level);
+	jwaoo_toy_process_key(code, value);
+
+	return value;
 }
 
-static void jwaoo_toy_key2_isr(void)
+static void app_config_key(IRQn_Type irq, GPIO_handler_function_t isr, GPIO_PORT port, GPIO_PIN pin)
 {
-	static uint8_t level;
+	GPIO_RegisterCallback(irq, isr);
+	GPIO_EnableIRQ(port, pin, irq, GPIO_GetPinStatus(port, pin), true, 60);
+}
 
-	jwaoo_toy_report_key(2);
+static void app_key1_isr(void)
+{
+	app_process_key(KEY1_GPIO_IRQ, 1, KEY1_GPIO_PORT, KEY1_GPIO_PIN);
+}
 
-	if (++level > LED_LEVEL_MAX) {
-		level = 0;
-	}
-
-	println("LEDR_LEVEL = %d", level);
-	LEDR_LEVEL(level);
+static void app_key2_isr(void)
+{
+	app_process_key(KEY2_GPIO_IRQ, 2, KEY2_GPIO_PORT, KEY2_GPIO_PIN);
 }
 
 #ifdef KEY3_GPIO_IRQ
-static void jwaoo_toy_key3_isr(void)
+static void app_key3_isr(void)
 {
-	jwaoo_toy_report_key(3);
+	app_process_key(KEY3_GPIO_IRQ, 3, KEY3_GPIO_PORT, KEY3_GPIO_PIN);
 }
 #endif
 
-static void jwaoo_toy_key4_isr(void)
+static void app_key4_isr(void)
 {
-	static uint8_t level;
-
-	jwaoo_toy_report_key(4);
-
-	if (++level > LED_LEVEL_MAX) {
-		level = 0;
-	}
-
-	println("LEDB_LEVEL = %d", level);
-	LEDB_LEVEL(level);
+	app_process_key(KEY4_GPIO_IRQ, 4, KEY4_GPIO_PORT, KEY4_GPIO_PIN);
 }
 
 void periph_init(void)
@@ -198,12 +196,12 @@ void periph_init(void)
     uart2_init(UART_BAUDRATE_115K2, 3);
 #endif
 
-	KEY_IRQ_CONFIG(1, jwaoo_toy_key1_isr);
-	KEY_IRQ_CONFIG(2, jwaoo_toy_key2_isr);
+	app_config_key(KEY1_GPIO_IRQ, app_key1_isr, KEY1_GPIO_PORT, KEY1_GPIO_PIN);
+	app_config_key(KEY2_GPIO_IRQ, app_key2_isr, KEY2_GPIO_PORT, KEY2_GPIO_PIN);
 #ifdef KEY3_GPIO_IRQ
-	KEY_IRQ_CONFIG(3, jwaoo_toy_key3_isr);
+	app_config_key(KEY3_GPIO_IRQ, app_key3_isr, KEY3_GPIO_PORT, KEY3_GPIO_PIN);
 #endif
-	KEY_IRQ_CONFIG(4, jwaoo_toy_key4_isr);
+	app_config_key(KEY4_GPIO_IRQ, app_key4_isr, KEY4_GPIO_PORT, KEY4_GPIO_PIN);
 
 	set_tmr_enable(CLK_PER_REG_TMR_ENABLED);
 	set_tmr_div(CLK_PER_REG_TMR_DIV_8);

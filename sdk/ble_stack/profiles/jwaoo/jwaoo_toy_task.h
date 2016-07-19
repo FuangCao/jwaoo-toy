@@ -77,6 +77,8 @@ enum
     JWAOO_TOY_CREATE_DB_CFM,
     ///Set the value of an attribute
     JWAOO_TOY_SENSOR_POLL,
+	JWAOO_TOY_KEY_LONG_CLICK,
+	JWAOO_TOY_KEY_MULTI_CLICK,
 
     ///Start the Device Information Service Task - at connection
     JWAOO_TOY_ENABLE_REQ,

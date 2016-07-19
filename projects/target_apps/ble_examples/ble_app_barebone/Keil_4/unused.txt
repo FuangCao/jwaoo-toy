@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 18 20:43:40 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Tue Jul 19 16:58:00 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -105,7 +105,6 @@ fdc1004_read_capacity <= USED 0
 ;FILE gpio.o
 GPIO_ConfigurePinPower <= USED 0
 GPIO_GetIRQInputLevel <= USED 0
-GPIO_SetIRQInputLevel <= USED 0
 ;FILE hardfault_handler.o
 ;FILE i2c.o
 i2c_release <= USED 0
@@ -150,6 +149,9 @@ timer0_set_pwm_low_counter <= USED 0
 timer0_set_pwm_on_counter <= USED 0
 timer0_start <= USED 0
 timer0_stop <= USED 0
+timer2_set_pwm2_duty_cycle <= USED 0
+timer2_set_pwm3_duty_cycle <= USED 0
+timer2_set_pwm4_duty_cycle <= USED 0
 timer2_set_pwm_frequency <= USED 0
 timer2_stop <= USED 0
 ;FILE rf_580.o

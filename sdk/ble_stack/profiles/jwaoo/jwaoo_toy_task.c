@@ -202,6 +202,22 @@ static int jwaoo_toy_sensor_poll_req_handler(ke_msg_id_t const msgid,
     return (KE_MSG_CONSUMED);
 }
 
+static int jwaoo_toy_key_long_click_req_handler(ke_msg_id_t const msgid,
+                                         uint8_t *code,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id) {
+	jwaoo_toy_report_key_long_click(jwaoo_toy_env.key_click_code);
+	return KE_MSG_CONSUMED;
+}
+
+static int jwaoo_toy_key_multi_click_req_handler(ke_msg_id_t const msgid,
+                                         uint8_t *code,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id) {
+	jwaoo_toy_report_key_click(jwaoo_toy_env.key_click_code, jwaoo_toy_env.key_click_count);
+	return KE_MSG_CONSUMED;
+}
+
 /**
  ****************************************************************************************
  * @brief Handles reception of the @ref JWAOO_TOY_ENABLE_REQ message.
@@ -341,12 +357,16 @@ const struct ke_msg_handler jwaoo_toy_disabled[] =
 ///Idle State handler definition.
 const struct ke_msg_handler jwaoo_toy_idle[] =
 {
+	{ JWAOO_TOY_KEY_LONG_CLICK,		(ke_msg_func_t) jwaoo_toy_key_long_click_req_handler },
+	{ JWAOO_TOY_KEY_MULTI_CLICK,	(ke_msg_func_t) jwaoo_toy_key_multi_click_req_handler },
     { JWAOO_TOY_ENABLE_REQ,			(ke_msg_func_t) jwaoo_toy_enable_req_handler },
 };
 
 const struct ke_msg_handler jwaoo_toy_connected[] =
 {
     { JWAOO_TOY_SENSOR_POLL,		(ke_msg_func_t) jwaoo_toy_sensor_poll_req_handler },
+	{ JWAOO_TOY_KEY_LONG_CLICK,		(ke_msg_func_t) jwaoo_toy_key_long_click_req_handler },
+	{ JWAOO_TOY_KEY_MULTI_CLICK,	(ke_msg_func_t) jwaoo_toy_key_multi_click_req_handler },
     { GAPC_DISCONNECT_IND,			(ke_msg_func_t) gapc_disconnect_ind_handler },
     { GATTC_CMP_EVT,				(ke_msg_func_t) gattc_cmp_evt_handler },
     { GATTC_WRITE_CMD_IND,			(ke_msg_func_t) gattc_write_cmd_ind_handler },
