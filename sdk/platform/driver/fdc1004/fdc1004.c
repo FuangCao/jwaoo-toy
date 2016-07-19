@@ -99,13 +99,13 @@ int fdc1004_reset(void)
 	return 0;
 }
 
-int fdc1004_get_depth(void)
+int fdc1004_read_capacity_simple(uint8_t data[4])
 {
+	int i;
 	int ret;
 	uint8_t addr;
-	int depth = 0;
 
-	while (1) {
+	for (i = 0; i < 10; i++) {
 		uint16_t status;
 
 		ret = fdc1004_read_u16(REG_FDC_CONF, &status);
@@ -118,27 +118,10 @@ int fdc1004_get_depth(void)
 			break;
 		}
 
-		println("status = 0x%04x", status);
+		println("%d. status = 0x%04x", i, status);
 	}
 
-#if 0
-	for (addr = REG_MEAS1_MSB; addr < REG_MEAS4_LSB; addr += 2) {
-		uint32_t value;
-
-		ret = fdc1004_read_capacity(addr, &value);
-		if (ret < 0) {
-			println("Failed to fdc1004_read_capacity: %d", ret);
-			return ret;
-		}
-
-		println("addr = %x, value = %x", addr, value);
-
-		if (value > 0x000F0000) {
-			depth++;
-		}
-	}
-#else
-	for (addr = REG_MEAS1_MSB; addr < REG_MEAS4_LSB; addr += 2) {
+	for (addr = REG_MEAS1_MSB, i = 0; addr < REG_MEAS4_LSB; addr += 2, i++) {
 		uint16_t value;
 
 		ret = fdc1004_read_u16(addr, &value);
@@ -147,29 +130,10 @@ int fdc1004_get_depth(void)
 			return ret;
 		}
 
-		// println("addr = %x, value = %x", addr, value);
-
-		if (value > 0x0F00) {
-			depth++;
-		}
+		data[i] = value >> 7;
 	}
-#endif
 
-#if 0
-	for (addr = REG_CONF_MEAS1; addr <= REG_CONF_MEAS4; addr++) {
-		uint16_t value;
-
-		ret = fdc1004_read_u16(addr, &value);
-		if (ret < 0) {
-			println("Failed to fdc1004_read_capacity: %d", ret);
-			return ret;
-		}
-
-		println("addr = %x, value = %x", addr, value);
-	}
-#endif
-
-	return depth;
+	return 0;
 }
 
 int fdc1004_init(void)
@@ -191,6 +155,7 @@ int fdc1004_init(void)
 
 	for (i = 0; i < 4; i++) {
 		fdc1004_write_u16(REG_CONF_MEAS1 + i, i << 13 | 7 << 10);
+		fdc1004_write_u16(REG_GAIN_CAL_CIN1 + i, 0xFFFF);
 	}
 
 	fdc1004_write_u16(REG_FDC_CONF, 3 << 10 | 1 << 8 | 0x00F0);

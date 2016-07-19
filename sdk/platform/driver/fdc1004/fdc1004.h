@@ -35,7 +35,7 @@ enum {
 int fdc1004_read_u16(uint8_t addr, uint16_t *value);
 int fdc1004_write_u16(uint8_t addr, uint16_t value);
 int fdc1004_read_capacity(uint8_t addr, uint32_t *value);
-int fdc1004_get_depth(void);
+int fdc1004_read_capacity_simple(uint8_t data[4]);
 int fdc1004_read_id(void);
 int fdc1004_init(void);
 

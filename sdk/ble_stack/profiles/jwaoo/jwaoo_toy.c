@@ -81,35 +81,33 @@ extern uint32_t spi_flash_page_size;
 
 uint8_t jwaoo_toy_sensor_poll(void)
 {
-	uint8_t buff[6];
+	uint8_t buff[8];
 
 	if (jwaoo_toy_env.mpu6050_dead < 10) {
-		if (i2c_read_data(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_ACCEL_XOUT_H, buff, sizeof(buff)) < 0) {
+		if (i2c_read_data(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_ACCEL_XOUT_H, buff, 6) < 0) {
 			jwaoo_toy_env.mpu6050_dead++;
-			buff[0] = buff[1] = buff[2] = 0;
+			memset(buff, 0x00, 3);
 		} else {
 			jwaoo_toy_env.mpu6050_dead = 0;
 			buff[1] = buff[2];
 			buff[2] = buff[4];
 		}
 	} else {
-		buff[0] = buff[1] = buff[2] = 0;
+		memset(buff, 0x00, 3);
 	}
 
 	if (jwaoo_toy_env.fdc1004_dead < 10) {
-		int depth = fdc1004_get_depth();
-		if (depth < 0) {
+		if (fdc1004_read_capacity_simple(buff + 3) < 0) {
 			jwaoo_toy_env.fdc1004_dead++;
-			buff[3] = 0;
+			memset(buff + 3, 0x00, 4);
 		} else {
 			jwaoo_toy_env.fdc1004_dead = 0;
-			buff[3] = depth;
 		}
 	} else {
-		buff[3] = 0;
+		memset(buff + 3, 0x00, 4);
 	}
 
-	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, 4);
+	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, 7);
 }
 
 static bool jwaoo_toy_sensor_set_enable(bool enable)
