@@ -101,10 +101,11 @@ int fdc1004_reset(void)
 
 int fdc1004_read_capacity_simple(uint8_t data[4])
 {
-	int i;
+	// int i;
 	int ret;
 	uint8_t addr;
 
+#if 0
 	for (i = 0; i < 10; i++) {
 		uint16_t status;
 
@@ -120,17 +121,14 @@ int fdc1004_read_capacity_simple(uint8_t data[4])
 
 		println("%d. status = 0x%04x", i, status);
 	}
+#endif
 
-	for (addr = REG_MEAS1_MSB, i = 0; addr < REG_MEAS4_LSB; addr += 2, i++) {
-		uint16_t value;
-
-		ret = fdc1004_read_u16(addr, &value);
+	for (addr = REG_MEAS1_MSB; addr < REG_MEAS4_LSB; addr += 2, data++) {
+		ret = fdc1004_read_data(addr, data, 1);
 		if (ret < 0) {
-			println("Failed to fdc1004_read_u16: %d", ret);
+			println("Failed to fdc1004_read_data: %d", ret);
 			return ret;
 		}
-
-		data[i] = value >> 7;
 	}
 
 	return 0;
@@ -154,8 +152,8 @@ int fdc1004_init(void)
 	}
 
 	for (i = 0; i < 4; i++) {
-		fdc1004_write_u16(REG_CONF_MEAS1 + i, i << 13 | 4 << 10 | 3 << 5);
-		// fdc1004_write_u16(REG_GAIN_CAL_CIN1 + i, 0xFFFF);
+		fdc1004_write_u16(REG_CONF_MEAS1 + i, i << 13 | 4 << 10 | 2 << 5);
+		fdc1004_write_u16(REG_GAIN_CAL_CIN1 + i, 0xFFFF);
 	}
 
 	fdc1004_write_u16(REG_FDC_CONF, 3 << 10 | 1 << 8 | 0x00F0);
