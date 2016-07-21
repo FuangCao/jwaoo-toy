@@ -412,7 +412,7 @@ void uart2_printf(const char *fmt, ...)
 {
 	va_list ap;
 	int length;
-	char buff[128];
+	static char buff[128];
 
 	va_start(ap, fmt);
 	length = vsnprintf(buff, sizeof(buff), fmt, ap);

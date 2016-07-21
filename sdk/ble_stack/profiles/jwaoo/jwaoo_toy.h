@@ -51,13 +51,29 @@
  ****************************************************************************************
  */
 
+#define JWAOO_TOY_MAX_COMMAND_SIZE		32
+#define JWAOO_TOY_MAX_EVENT_SIZE		20
+#define JWAOO_TOY_MAX_FLASH_DATA_SIZE	20
+#define JWAOO_TOY_MAX_SENSOR_DATA_SIZE	20
+#define JWAOO_TOY_MAX_DEBUG_DATA_SIZE	20
+
+enum
+{
+	JWAOO_TOY_UUID_SVC = 0x1888,
+	JWAOO_TOY_UUID_COMMAND,
+	JWAOO_TOY_UUID_EVENT,
+	JWAOO_TOY_UUID_FLASH,
+	JWAOO_TOY_UUID_SENSOR,
+	JWAOO_TOY_UUID_DEBUG,
+	JWAOO_TOY_UUID_MAX
+};
+
 enum
 {
 	JWAOO_TOY_ATTR_SVC,
 
 	JWAOO_TOY_ATTR_COMMAND_CHAR,
 	JWAOO_TOY_ATTR_COMMAND_DATA,
-	JWAOO_TOY_ATTR_COMMAND_CFG,
 
 	JWAOO_TOY_ATTR_EVENT_CHAR,
 	JWAOO_TOY_ATTR_EVENT_DATA,
@@ -65,11 +81,14 @@ enum
 
 	JWAOO_TOY_ATTR_FLASH_CHAR,
 	JWAOO_TOY_ATTR_FLASH_DATA,
-	JWAOO_TOY_ATTR_FLASH_CFG,
 
 	JWAOO_TOY_ATTR_SENSOR_CHAR,
 	JWAOO_TOY_ATTR_SENSOR_DATA,
 	JWAOO_TOY_ATTR_SENSOR_CFG,
+
+	JWAOO_TOY_ATTR_DEBUG_CHAR,
+	JWAOO_TOY_ATTR_DEBUG_DATA,
+	JWAOO_TOY_ATTR_DEBUG_CFG,
 
 	JWAOO_TOY_ATTR_COUNT,
 };
@@ -182,7 +201,8 @@ struct jwaoo_toy_env_tag
 
     /// Service Start HandleVAL
     uint16_t handle;
-	bool notify_busy;
+	uint16_t notify_busy_mask;
+	uint16_t notify_enable_mask;
 
 	bool flash_upgrade;
 	bool flash_write_enable;
@@ -294,6 +314,16 @@ static inline uint8_t jwaoo_toy_send_event(const uint8_t *event, int size)
 static inline uint8_t jwaoo_toy_send_empty_event(const uint8_t type)
 {
 	return jwaoo_toy_send_event(&type, 1);
+}
+
+static inline uint16_t jwaoo_toy_notify_busy(uint8_t attr)
+{
+	return jwaoo_toy_env.notify_busy_mask & (1 << attr);
+}
+
+static inline uint16_t jwaoo_toy_sensor_notify_busy(void)
+{
+	return jwaoo_toy_env.notify_busy_mask & (1 << JWAOO_TOY_ATTR_SENSOR_DATA);
 }
 
 #endif //BLE_JWAOO_TOY_SERVER

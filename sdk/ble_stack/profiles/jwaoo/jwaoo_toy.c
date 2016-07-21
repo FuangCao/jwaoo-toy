@@ -59,6 +59,8 @@
  ****************************************************************************************
  */
 
+extern struct jwaoo_toy_log_cache_tag uart2_log_cache;
+
 struct jwaoo_toy_env_tag jwaoo_toy_env __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
 struct jwaoo_toy_device_data_tag jwaoo_toy_device_data __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
 
@@ -125,7 +127,7 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_FAST;
 
 			ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
-			if (!jwaoo_toy_env.notify_busy) {
+			if (jwaoo_toy_sensor_notify_busy() == 0) {
 				jwaoo_toy_sensor_poll();
 			}
 		}
@@ -233,7 +235,7 @@ bool jwaoo_toy_flash_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size, 
 	while (size > 0) {
 		int ret;
 		int length;
-		uint8_t buff[128];
+		static uint8_t buff[64];
 
 		length = (size > sizeof(buff) ? sizeof(buff) : size);
 
@@ -283,7 +285,6 @@ void jwaoo_toy_init(void)
 
 void jwaoo_toy_enable(uint16_t conhdl) 
 {
-	jwaoo_toy_env.notify_busy = false;
 	jwaoo_toy_env.fdc1004_dead = 0;
 	jwaoo_toy_env.mpu6050_dead = 0;
 
@@ -304,6 +305,8 @@ void jwaoo_toy_disable(uint16_t conhdl)
 
     ke_msg_send(ind);
 
+	jwaoo_toy_env.notify_busy_mask = 0;
+	jwaoo_toy_env.notify_enable_mask = 0;
 	jwaoo_toy_env.flash_write_enable = false;
 	jwaoo_toy_env.flash_write_success = false;
 	jwaoo_toy_sensor_set_enable(false);
@@ -325,9 +328,20 @@ uint8_t jwaoo_toy_write_data(uint16_t attr, const void *data, int size)
 uint8_t jwaoo_toy_send_notify(uint16_t attr, const void *data, int size)
 {
 	uint8_t ret;
-	uint16_t handle = jwaoo_toy_env.handle + attr;
+	uint16_t handle;
+	uint16_t mask = 1 << attr;
 
-	jwaoo_toy_env.notify_busy = true;
+	if ((jwaoo_toy_env.notify_enable_mask & mask) == 0) {
+		return ATT_ERR_WRITE_NOT_PERMITTED;
+	}
+
+	if (jwaoo_toy_env.notify_busy_mask & mask) {
+		return ATT_ERR_PREPARE_QUEUE_FULL;
+	}
+
+	jwaoo_toy_env.notify_busy_mask |= mask;
+
+	handle = jwaoo_toy_env.handle + attr;
 
 	ret = attmdb_att_set_value(handle, size, (uint8_t *) data);
 	if (ret != ATT_ERR_NO_ERROR) {

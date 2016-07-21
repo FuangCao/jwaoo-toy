@@ -40,6 +40,7 @@ static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR |
 static struct att_char_desc jwaoo_toy_event_char = ATT_CHAR(ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_EVENT);
 static struct att_char_desc jwaoo_toy_flash_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_FLASH);
 static struct att_char_desc jwaoo_toy_sensor_char = ATT_CHAR(ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_SENSOR);
+static struct att_char_desc jwaoo_toy_debug_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_NTF, 0, JWAOO_TOY_UUID_DEBUG);
 
 const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 {
@@ -62,13 +63,6 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.uuid = JWAOO_TOY_UUID_COMMAND,
 		.perm = PERM(WR, ENABLE) | PERM(RD, ENABLE),
 		.max_length = JWAOO_TOY_MAX_COMMAND_SIZE,
-		.length = 0,
-		.value = NULL
-	},
-	[JWAOO_TOY_ATTR_COMMAND_CFG] = {
-		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
-		.perm = PERM(WR, ENABLE),
-		.max_length = 2,
 		.length = 0,
 		.value = NULL
 	},
@@ -109,13 +103,6 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.length = 0,
 		.value = NULL
 	},
-	[JWAOO_TOY_ATTR_FLASH_CFG] = {
-		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
-		.perm = PERM(WR, ENABLE),
-		.max_length = 2,
-		.length = 0,
-		.value = NULL
-	},
 	// ============================================================
 	[JWAOO_TOY_ATTR_SENSOR_CHAR] = {
 		.uuid = ATT_DECL_CHARACTERISTIC,
@@ -132,6 +119,28 @@ const struct attm_desc jwaoo_toy_att_db[JWAOO_TOY_ATTR_COUNT] =
 		.value = NULL
 	},
 	[JWAOO_TOY_ATTR_SENSOR_CFG] = {
+		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
+		.perm = PERM(WR, ENABLE),
+		.max_length = 2,
+		.length = 0,
+		.value = NULL
+	},
+	// ============================================================
+	[JWAOO_TOY_ATTR_DEBUG_CHAR] = {
+		.uuid = ATT_DECL_CHARACTERISTIC,
+		.perm = PERM(RD, ENABLE),
+		.max_length = sizeof(jwaoo_toy_debug_char),
+		.length = sizeof(jwaoo_toy_debug_char),
+		.value = (uint8_t *)& jwaoo_toy_debug_char
+	},
+	[JWAOO_TOY_ATTR_DEBUG_DATA] = {
+		.uuid = JWAOO_TOY_UUID_DEBUG,
+		.perm = PERM(WR, ENABLE) | PERM(NTF, ENABLE),
+		.max_length = JWAOO_TOY_MAX_DEBUG_DATA_SIZE,
+		.length = 0,
+		.value = NULL
+	},
+	[JWAOO_TOY_ATTR_DEBUG_CFG] = {
 		.uuid = ATT_DESC_CLIENT_CHAR_CFG,
 		.perm = PERM(WR, ENABLE),
 		.max_length = 2,
@@ -192,7 +201,7 @@ static int jwaoo_toy_sensor_poll_req_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	if (jwaoo_toy_env.notify_busy) {
+	if (jwaoo_toy_sensor_notify_busy()) {
 		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
 	} else if (jwaoo_toy_env.sensor_poll_mode == JWAOO_SENSOR_POLL_MODE_SLOW) {
 		jwaoo_toy_sensor_poll();
@@ -298,7 +307,8 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
                                 ke_task_id_t const src_id)
 {
 	if (param->req_type == GATTC_NOTIFY) {
-		jwaoo_toy_env.notify_busy = false;
+		jwaoo_toy_env.notify_busy_mask = 0;
+
 		if (jwaoo_toy_env.sensor_poll_mode == JWAOO_SENSOR_POLL_MODE_FAST) {
 			jwaoo_toy_sensor_poll();
 		}
@@ -332,6 +342,22 @@ static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
 
 	case JWAOO_TOY_ATTR_FLASH_DATA:
 		jwaoo_toy_process_flash_data(param->value, param->length);
+		break;
+
+	case JWAOO_TOY_ATTR_EVENT_CFG:
+	case JWAOO_TOY_ATTR_SENSOR_CFG:
+	case JWAOO_TOY_ATTR_DEBUG_CFG:
+		if (param->length == 2) {
+			uint16_t mask = 1 << (attr - 1);
+
+			if (param->value[0]) {
+				jwaoo_toy_env.notify_enable_mask |= mask;
+			} else {
+				jwaoo_toy_env.notify_enable_mask &= ~(mask);
+			}
+
+			println("notify_enable_mask = %04x", jwaoo_toy_env.notify_enable_mask);
+		}
 		break;
 	}
 
