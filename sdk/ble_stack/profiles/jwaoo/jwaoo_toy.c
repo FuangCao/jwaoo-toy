@@ -533,6 +533,39 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		break;
 
 	case JWAOO_TOY_CMD_I2C_RW:
+		if (length >= 3) {
+			int count = 0;
+			uint8_t rdlen = command->i2c.rdlen;
+			uint8_t wrlen = length - 3;
+			struct i2c_message msgs[2];
+			uint8_t response[rdlen + 2];
+
+			if (wrlen > 0) {
+				msgs[count].read = 0;
+				msgs[count].count = wrlen;
+				msgs[count].data = (uint8_t *) command->i2c.data;
+				count++;
+			}
+
+			if (rdlen > 0) {
+				msgs[count].read = 1;
+				msgs[count].count = rdlen;
+				msgs[count].data = response + 2;
+				count++;
+			}
+
+			println("i2c: rdlen = %d, wrlen = %d, count = %d", rdlen, wrlen, count);
+
+			if (count < 1 || i2c_transfer(command->i2c.slave, msgs, count) < 0) {
+				break;
+			}
+
+			response[0] = command->type;
+			response[1] = JWAOO_TOY_RSP_DATA;
+
+			jwaoo_toy_send_command(response, sizeof(response));
+			return;
+		}
 		break;
 
 	// ================================================================================
@@ -553,7 +586,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		return;
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_ENABLE:
-		jwaoo_toy_env.flash_write_enable = (length > 1 && command->enable);
+		jwaoo_toy_env.flash_write_enable = (length > 1 && command->enable.value);
 		success = true;
 		break;
 
@@ -623,16 +656,16 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		}
 
 		if (jwaoo_toy_env.flash_write_enable && jwaoo_toy_env.flash_write_success) {
-			println("remote: crc = 0x%02x, length = %d", command->crc, command->length);
+			println("remote: crc = 0x%02x, length = %d", command->upgrade.crc, command->upgrade.length);
 			println("local:  crc = 0x%02x, length = %d",
 				jwaoo_toy_env.flash_write_crc, jwaoo_toy_env.flash_write_length);
 
-			if (command->crc != jwaoo_toy_env.flash_write_crc) {
+			if (command->upgrade.crc != jwaoo_toy_env.flash_write_crc) {
 				println("crc not match");
 				break;
 			}
 
-			if (command->length != jwaoo_toy_env.flash_write_length) {
+			if (command->upgrade.length != jwaoo_toy_env.flash_write_length) {
 				println("length not match");
 				break;
 			}
@@ -689,9 +722,9 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 			break;
 		}
 
-		if (length > 1 && command->enable) {
+		if (length > 1 && command->enable.value) {
 			if (length > 5) {
-				jwaoo_toy_env.sensor_poll_delay = command->delay32 / 10;
+				jwaoo_toy_env.sensor_poll_delay = command->enable.delay32 / 10;
 			}
 
 			success = jwaoo_toy_sensor_set_enable(true);
@@ -705,16 +738,16 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 	// ================================================================================
 
 	case JWAOO_TOY_CMD_KEY_CLICK_ENABLE:
-		jwaoo_toy_env.key_click_enable = length > 1 && command->enable;
+		jwaoo_toy_env.key_click_enable = length > 1 && command->enable.value;
 		success = true;
 		break;
 
 	case JWAOO_TOY_CMD_KEY_LONG_CLICK_ENABLE:
-		if (length > 1 && command->enable) {
+		if (length > 1 && command->enable.value) {
 			jwaoo_toy_env.key_long_click_enable = true;
 
 			if (length > 3) {
-				uint16_t delay = command->delay16 / 10;
+				uint16_t delay = command->enable.delay16 / 10;
 
 				if (delay > 0) {
 					jwaoo_toy_env.key_long_click_delay = delay;
@@ -727,11 +760,11 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		break;
 
 	case JWAOO_TOY_CMD_KEY_MULTI_CLICK_ENABLE:
-		if (length > 1 && command->enable) {
+		if (length > 1 && command->enable.value) {
 			jwaoo_toy_env.key_multi_click_enable = true;
 
 			if (length > 3) {
-				uint16_t delay = command->delay16 / 10;
+				uint16_t delay = command->enable.delay16 / 10;
 
 				if (delay > 0) {
 					jwaoo_toy_env.key_multi_click_delay = delay;

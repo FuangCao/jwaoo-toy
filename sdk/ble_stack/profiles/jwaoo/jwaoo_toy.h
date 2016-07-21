@@ -159,17 +159,23 @@ struct jwaoo_toy_command
 		struct {
 			uint8_t crc;
 			uint16_t length;
-		};
+		} upgrade;
 
 		struct {
-			uint8_t enable;
+			uint8_t value;
 
 			union {
 				uint8_t delay8;
 				uint16_t delay16;
 				uint32_t delay32;
 			};
-		};
+		} enable;
+
+		struct {
+			uint8_t slave;
+			uint8_t rdlen;
+			uint8_t data[];
+		} i2c;
 	};
 };
 
