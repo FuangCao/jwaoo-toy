@@ -214,10 +214,6 @@ void periph_init(void)
 	jwaoo_toy_read_device_data();
 
 	i2c_init(I2C_SPEED_400K, I2C_ADDRESS_MODE_7BIT);
-	MPU6050_Initialize();
-	MPU6050_GetDeviceID();
-
-	fdc1004_init();
 
    // Enable the pads
     SetBits16(SYS_CTRL_REG, PAD_LATCH_EN, 1);

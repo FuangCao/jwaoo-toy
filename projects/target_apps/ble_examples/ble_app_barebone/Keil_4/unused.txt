@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 25 15:26:58 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Jul 25 17:46:42 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -97,10 +97,10 @@ batt_cal_aaa <= USED 0
 batt_cal_cr1225 <= USED 0
 batt_cal_cr2032 <= USED 0
 battery_get_lvl <= USED 0
+;FILE bmi160.o
 ;FILE boot_vectors.o
 ;FILE ch_map.obj
 ;FILE fdc1004.o
-fdc1004_read_capacity <= USED 0
 ;FILE gapm_util.obj
 ;FILE gpio.o
 GPIO_ConfigurePinPower <= USED 0
@@ -124,20 +124,6 @@ jwaoo_toy_send_response_u8 <= USED 0
 ;FILE ke_task.obj
 ;FILE llc.obj
 ;FILE mpu6050.o
-MPU6050ReadTempRaw <= USED 0
-MPU6050_Calibration <= USED 0
-MPU6050_DeInitialize <= USED 0
-MPU6050_DumpAccelGyroTemperature <= USED 0
-MPU6050_DumpCalibratedAccelGyro <= USED 0
-MPU6050_DumpCalibratedAccelGyro2 <= USED 0
-MPU6050_GetFullScaleAccelRange <= USED 0
-MPU6050_GetFullScaleGyroRange <= USED 0
-MPU6050_GetRawAccelGyro <= USED 0
-MPU6050_GetSleepModeStatus <= USED 0
-MPU6050_ReadBit <= USED 0
-MPU6050_ReadTemp <= USED 0
-MPU6050_TestConnection <= USED 0
-MPU6050_TestDumpRawAccelGyro <= USED 0
 ;FILE nmi_handler.o
 ;FILE nvds.o
 ;FILE prf_utils.o

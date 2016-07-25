@@ -244,10 +244,9 @@ struct jwaoo_toy_env_tag
 	uint16_t flash_write_length;
 	uint32_t flash_write_offset;
 
-	uint8_t fdc1004_dead;
-	uint8_t mpu6050_dead;
-
 	bool sensor_enable;
+	uint8_t sensor_accel_dead;
+	uint8_t sensor_capacity_dead;
 	uint8_t sensor_poll_mode;
 	uint16_t sensor_poll_delay;
 

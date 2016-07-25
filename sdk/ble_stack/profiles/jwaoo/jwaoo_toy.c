@@ -34,9 +34,10 @@
 #include "jwaoo_toy_task.h"
 #include "prf_utils.h"
 #include "app_easy_timer.h"
+#include "user_periph_setup.h"
+#include "bmi160.h"
 #include "mpu6050.h"
 #include "fdc1004.h"
-#include "user_periph_setup.h"
 
 /*
  * MACROS
@@ -105,29 +106,37 @@ extern uint32_t spi_flash_page_size;
  ****************************************************************************************
  */
 
+static bool jwaoo_toy_sensor_read_values_dummy(uint8_t values[3])
+{
+	return false;
+}
+
+static bool (*jwaoo_toy_accel_sensor_set_enable)(bool enable);
+static bool (*jwaoo_toy_capacity_sensor_set_enable)(bool enable);
+static bool (*jwaoo_toy_accel_sensor_read_values)(uint8_t values[3]) = jwaoo_toy_sensor_read_values_dummy;
+static bool (*jwaoo_toy_capacity_sensor_read_values)(uint8_t values[4]) = jwaoo_toy_sensor_read_values_dummy;
+
 uint8_t jwaoo_toy_sensor_poll(void)
 {
 	uint8_t buff[8];
 
-	if (jwaoo_toy_env.mpu6050_dead < 10) {
-		if (i2c_read_data(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_ACCEL_XOUT_H, buff, 6) < 0) {
-			jwaoo_toy_env.mpu6050_dead++;
-			memset(buff, 0x00, 3);
+	if (jwaoo_toy_env.sensor_accel_dead < 10) {
+		if (jwaoo_toy_accel_sensor_read_values(buff)) {
+			jwaoo_toy_env.sensor_accel_dead = 0;
 		} else {
-			jwaoo_toy_env.mpu6050_dead = 0;
-			buff[1] = buff[2];
-			buff[2] = buff[4];
+			jwaoo_toy_env.sensor_accel_dead++;
+			memset(buff, 0x00, 3);
 		}
 	} else {
 		memset(buff, 0x00, 3);
 	}
 
-	if (jwaoo_toy_env.fdc1004_dead < 10) {
-		if (fdc1004_read_capacity_simple(buff + 3) < 0) {
-			jwaoo_toy_env.fdc1004_dead++;
-			memset(buff + 3, 0x00, 4);
+	if (jwaoo_toy_env.sensor_capacity_dead < 10) {
+		if (jwaoo_toy_capacity_sensor_read_values(buff + 3)) {
+			jwaoo_toy_env.sensor_capacity_dead = 0;
 		} else {
-			jwaoo_toy_env.fdc1004_dead = 0;
+			jwaoo_toy_env.sensor_capacity_dead++;
+			memset(buff + 3, 0x00, 4);
 		}
 	} else {
 		memset(buff + 3, 0x00, 4);
@@ -141,6 +150,27 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 	println("sensor_enable = %d, sensor_poll_delay = %d", enable, jwaoo_toy_env.sensor_poll_delay);
 
 	if (enable) {
+		if (jwaoo_toy_accel_sensor_set_enable) {
+			jwaoo_toy_accel_sensor_set_enable(true);
+		} else if (bmi160_set_enable(true)) {
+			jwaoo_toy_accel_sensor_set_enable = bmi160_set_enable;
+			jwaoo_toy_accel_sensor_read_values = bmi160_read_sensor_values;
+		} else if (mpu6050_set_enable(true)) {
+			jwaoo_toy_accel_sensor_set_enable = mpu6050_set_enable;
+			jwaoo_toy_accel_sensor_read_values = mpu6050_read_sensor_values;
+		} else {
+			jwaoo_toy_accel_sensor_read_values = jwaoo_toy_sensor_read_values_dummy;
+		}
+
+		if (jwaoo_toy_capacity_sensor_set_enable) {
+			jwaoo_toy_capacity_sensor_set_enable(true);
+		} else if (fdc1004_set_enable(true)) {
+			jwaoo_toy_capacity_sensor_set_enable = bmi160_set_enable;
+			jwaoo_toy_capacity_sensor_read_values = fdc1004_read_sensor_values;
+		} else {
+			jwaoo_toy_capacity_sensor_read_values = jwaoo_toy_sensor_read_values_dummy;
+		}
+
 		if (jwaoo_toy_env.sensor_poll_delay > 0) {
 			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_SLOW;
 
@@ -158,6 +188,14 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 	} else {
 		jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_NONE;
 		ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
+
+		if (jwaoo_toy_capacity_sensor_set_enable) {
+			jwaoo_toy_capacity_sensor_set_enable(false);
+		}
+
+		if (jwaoo_toy_accel_sensor_set_enable) {
+			jwaoo_toy_accel_sensor_set_enable(false);
+		}
 	}
 
 	println("sensor_poll_mode = %d", jwaoo_toy_env.sensor_poll_mode);
@@ -309,8 +347,8 @@ void jwaoo_toy_init(void)
 
 void jwaoo_toy_enable(uint16_t conhdl) 
 {
-	jwaoo_toy_env.fdc1004_dead = 0;
-	jwaoo_toy_env.mpu6050_dead = 0;
+	jwaoo_toy_env.sensor_capacity_dead = 0;
+	jwaoo_toy_env.sensor_accel_dead = 0;
 
 #if 0
 	if (jwaoo_toy_env.sensor_enable) {
