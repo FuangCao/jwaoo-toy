@@ -186,18 +186,8 @@ static int jwaoo_toy_create_db_req_handler(ke_msg_id_t const msgid,
     return (KE_MSG_CONSUMED);
 }
 
-/**
- ****************************************************************************************
- * @brief Handles reception of the @ref JWAOO_TOY_SET_CHAR_VAL_REQ message.
- * @param[in] msgid Id of the message received (probably unused).
- * @param[in] param Pointer to the parameters of the message.
- * @param[in] dest_id ID of the receiving task instance (probably unused).
- * @param[in] src_id ID of the sending task instance.
- * @return If the message was consumed or not.
- ****************************************************************************************
- */
-static int jwaoo_toy_sensor_poll_req_handler(ke_msg_id_t const msgid,
-                                         struct jwaoo_toy_set_char_val_req const *param,
+static int jwaoo_toy_sensor_poll_handler(ke_msg_id_t const msgid,
+                                         void *param,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
@@ -211,20 +201,38 @@ static int jwaoo_toy_sensor_poll_req_handler(ke_msg_id_t const msgid,
     return (KE_MSG_CONSUMED);
 }
 
-static int jwaoo_toy_key_long_click_req_handler(ke_msg_id_t const msgid,
-                                         uint8_t *code,
+static int jwaoo_toy_key_report_state_handler(ke_msg_id_t const msgid,
+                                         struct jwaoo_toy_key_message const *param,
                                          ke_task_id_t const dest_id,
-                                         ke_task_id_t const src_id) {
-	jwaoo_toy_report_key_long_click(jwaoo_toy_env.key_click_code);
-	return KE_MSG_CONSUMED;
+                                         ke_task_id_t const src_id)
+{
+	uint8_t event[] = { JWAOO_TOY_EVT_KEY_STATE, param->key->code, param->value };
+
+	return jwaoo_toy_send_event(event, sizeof(event));
 }
 
-static int jwaoo_toy_key_multi_click_req_handler(ke_msg_id_t const msgid,
-                                         uint8_t *code,
+static int jwaoo_toy_key_report_click_handler(ke_msg_id_t const msgid,
+                                         struct jwaoo_toy_key_message const *param,
                                          ke_task_id_t const dest_id,
-                                         ke_task_id_t const src_id) {
-	jwaoo_toy_report_key_click(jwaoo_toy_env.key_click_code, jwaoo_toy_env.key_click_count);
-	return KE_MSG_CONSUMED;
+                                         ke_task_id_t const src_id)
+{
+	uint8_t event[] = { JWAOO_TOY_EVT_KEY_CLICK, param->key->code, param->count };
+
+	jwaoo_toy_send_event(event, sizeof(event));
+
+    return KE_MSG_CONSUMED;
+}
+
+static int jwaoo_toy_key_report_long_click_handler(ke_msg_id_t const msgid,
+                                         struct jwaoo_toy_key_message const *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id)
+{
+	uint8_t event[] = { JWAOO_TOY_EVT_KEY_LONG_CLICK, param->key->code };
+
+	jwaoo_toy_send_event(event, sizeof(event));
+
+    return KE_MSG_CONSUMED;
 }
 
 /**
@@ -383,19 +391,18 @@ const struct ke_msg_handler jwaoo_toy_disabled[] =
 ///Idle State handler definition.
 const struct ke_msg_handler jwaoo_toy_idle[] =
 {
-	{ JWAOO_TOY_KEY_LONG_CLICK,		(ke_msg_func_t) jwaoo_toy_key_long_click_req_handler },
-	{ JWAOO_TOY_KEY_MULTI_CLICK,	(ke_msg_func_t) jwaoo_toy_key_multi_click_req_handler },
     { JWAOO_TOY_ENABLE_REQ,			(ke_msg_func_t) jwaoo_toy_enable_req_handler },
 };
 
 const struct ke_msg_handler jwaoo_toy_connected[] =
 {
-    { JWAOO_TOY_SENSOR_POLL,		(ke_msg_func_t) jwaoo_toy_sensor_poll_req_handler },
-	{ JWAOO_TOY_KEY_LONG_CLICK,		(ke_msg_func_t) jwaoo_toy_key_long_click_req_handler },
-	{ JWAOO_TOY_KEY_MULTI_CLICK,	(ke_msg_func_t) jwaoo_toy_key_multi_click_req_handler },
-    { GAPC_DISCONNECT_IND,			(ke_msg_func_t) gapc_disconnect_ind_handler },
-    { GATTC_CMP_EVT,				(ke_msg_func_t) gattc_cmp_evt_handler },
-    { GATTC_WRITE_CMD_IND,			(ke_msg_func_t) gattc_write_cmd_ind_handler },
+    { JWAOO_TOY_SENSOR_POLL,			(ke_msg_func_t) jwaoo_toy_sensor_poll_handler },
+	{ JWAOO_TOY_KEY_REPORT_STATE,		(ke_msg_func_t) jwaoo_toy_key_report_state_handler },
+	{ JWAOO_TOY_KEY_REPORT_CLICK,		(ke_msg_func_t) jwaoo_toy_key_report_click_handler },
+	{ JWAOO_TOY_KEY_REPORT_LONG_CLICK,	(ke_msg_func_t) jwaoo_toy_key_report_long_click_handler },
+    { GAPC_DISCONNECT_IND,				(ke_msg_func_t) gapc_disconnect_ind_handler },
+    { GATTC_CMP_EVT,					(ke_msg_func_t) gattc_cmp_evt_handler },
+    { GATTC_WRITE_CMD_IND,				(ke_msg_func_t) gattc_write_cmd_ind_handler },
 };
 
 ///Specifies the message handler structure for every input state.

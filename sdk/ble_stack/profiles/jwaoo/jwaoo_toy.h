@@ -43,6 +43,10 @@
  ****************************************************************************************
  */
 
+#define JWAOO_TOY_KEY_COUNT				4
+#define JWAOO_TOY_KEY_REPEAT_LONG		100
+#define JWAOO_TOY_KEY_REPEAT_SHORT		5
+
 #define JWAOO_TOY_IDENTIFY				"JwaooToy"
 #define JWAOO_TOY_VERSION				0x20160702
 
@@ -193,10 +197,33 @@ struct jwaoo_toy_response
 	};
 };
 
-struct jwaoo_toy_device_data_tag {
+struct jwaoo_toy_device_data_tag
+{
 	uint8_t bd_addr[6];
 };
 #pragma pack()
+
+struct jwaoo_toy_key
+{
+	uint8_t code;
+	uint8_t value;
+	uint8_t count;
+	uint8_t repeat;
+
+	uint16_t repeat_timer;
+	uint16_t long_click_timer;
+	uint16_t multi_click_timer;
+};
+
+struct jwaoo_toy_key_message
+{
+	struct jwaoo_toy_key *key;
+
+	union {
+		uint8_t value;
+		uint8_t count;
+	};
+};
 
 ///Attributes State Machine
 ///Device Information Service Server Environment Variable
@@ -227,8 +254,6 @@ struct jwaoo_toy_env_tag
 	bool key_click_enable;
 	bool key_long_click_enable;
 	bool key_multi_click_enable;
-	uint8_t key_click_code;
-	uint8_t key_click_count;
 	uint16_t key_long_click_delay;
 	uint16_t key_multi_click_delay;
 };
@@ -240,7 +265,7 @@ struct jwaoo_toy_env_tag
 
 extern struct jwaoo_toy_env_tag jwaoo_toy_env;
 extern struct jwaoo_toy_device_data_tag jwaoo_toy_device_data;
-
+extern struct jwaoo_toy_key jwaoo_toy_keys[JWAOO_TOY_KEY_COUNT];
 
 /*
  * FUNCTION DECLARATIONS
@@ -272,9 +297,11 @@ uint8_t jwaoo_toy_check_val_len(uint8_t char_code, uint8_t val_len);
 void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
 uint8_t jwaoo_toy_sensor_poll(void);
-uint8_t jwaoo_toy_report_key_value(uint8_t code, uint8_t value);
-uint8_t jwaoo_toy_report_key_click(uint8_t code, uint8_t count);
-uint8_t jwaoo_toy_report_key_long_click(uint8_t code);
+
+void jwaoo_toy_on_key_repeat(struct jwaoo_toy_key *key);
+void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count);
+void jwaoo_toy_on_key_long_clicked(struct jwaoo_toy_key *key);
+
 bool jwaoo_toy_read_device_data(void);
 uint8_t jwaoo_toy_write_data(uint16_t attr, const void *data, int size);
 uint8_t jwaoo_toy_send_notify(uint16_t attr, const void *data, int size);
@@ -295,7 +322,7 @@ uint8_t jwaoo_toy_send_response_text(uint8_t command, const char *fmt, ...);
 
 void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t length);
 bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length);
-void jwaoo_toy_process_key(uint8_t code, uint8_t value);
+void jwaoo_toy_process_key(uint8_t index, uint8_t value);
 
 static inline uint16_t jwaoo_toy_build_value16(const uint8_t *data)
 {

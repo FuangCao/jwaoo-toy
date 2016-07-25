@@ -153,24 +153,24 @@ static void app_config_key(IRQn_Type irq, GPIO_handler_function_t isr, GPIO_PORT
 
 static void app_key1_isr(void)
 {
-	app_process_key(KEY1_GPIO_IRQ, 1, KEY1_GPIO_PORT, KEY1_GPIO_PIN);
+	app_process_key(KEY1_GPIO_IRQ, 0, KEY1_GPIO_PORT, KEY1_GPIO_PIN);
 }
 
 static void app_key2_isr(void)
 {
-	app_process_key(KEY2_GPIO_IRQ, 2, KEY2_GPIO_PORT, KEY2_GPIO_PIN);
+	app_process_key(KEY2_GPIO_IRQ, 1, KEY2_GPIO_PORT, KEY2_GPIO_PIN);
 }
 
 #ifdef KEY3_GPIO_IRQ
 static void app_key3_isr(void)
 {
-	app_process_key(KEY3_GPIO_IRQ, 3, KEY3_GPIO_PORT, KEY3_GPIO_PIN);
+	app_process_key(KEY3_GPIO_IRQ, 2, KEY3_GPIO_PORT, KEY3_GPIO_PIN);
 }
 #endif
 
 static void app_key4_isr(void)
 {
-	app_process_key(KEY4_GPIO_IRQ, 4, KEY4_GPIO_PORT, KEY4_GPIO_PIN);
+	app_process_key(KEY4_GPIO_IRQ, 3, KEY4_GPIO_PORT, KEY4_GPIO_PIN);
 }
 
 void periph_init(void)
