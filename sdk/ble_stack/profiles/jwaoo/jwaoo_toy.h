@@ -140,13 +140,6 @@ enum
 	JWAOO_TOY_EVT_KEY_LONG_CLICK,
 };
 
-enum
-{
-	JWAOO_SENSOR_POLL_MODE_NONE,
-	JWAOO_SENSOR_POLL_MODE_SLOW,
-	JWAOO_SENSOR_POLL_MODE_FAST,
-};
-
 #pragma pack(1)
 
 struct jwaoo_toy_command
@@ -245,9 +238,10 @@ struct jwaoo_toy_env_tag
 	uint32_t flash_write_offset;
 
 	bool sensor_enable;
+	bool sensor_pending;
+	bool sensor_poll_enable;
 	uint8_t sensor_accel_dead;
 	uint8_t sensor_capacity_dead;
-	uint8_t sensor_poll_mode;
 	uint16_t sensor_poll_delay;
 
 	bool key_click_enable;

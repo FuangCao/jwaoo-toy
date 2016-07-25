@@ -191,11 +191,14 @@ static int jwaoo_toy_sensor_poll_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	if (jwaoo_toy_sensor_notify_busy()) {
-		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
-	} else if (jwaoo_toy_env.sensor_poll_mode == JWAOO_SENSOR_POLL_MODE_SLOW) {
-		jwaoo_toy_sensor_poll();
+	if (jwaoo_toy_env.sensor_poll_enable) {
 		ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, jwaoo_toy_env.sensor_poll_delay);
+
+		if (jwaoo_toy_sensor_notify_busy()) {
+			jwaoo_toy_env.sensor_pending = true;
+		} else {
+			jwaoo_toy_sensor_poll();
+		}
 	}
 
     return (KE_MSG_CONSUMED);
@@ -317,7 +320,8 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
 	if (param->req_type == GATTC_NOTIFY) {
 		jwaoo_toy_env.notify_busy_mask = 0;
 
-		if (jwaoo_toy_env.sensor_poll_mode == JWAOO_SENSOR_POLL_MODE_FAST) {
+		if (jwaoo_toy_env.sensor_pending) {
+			jwaoo_toy_env.sensor_pending = false;
 			jwaoo_toy_sensor_poll();
 		}
 	}

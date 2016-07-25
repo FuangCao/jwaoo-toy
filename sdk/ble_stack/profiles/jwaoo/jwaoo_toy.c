@@ -171,22 +171,13 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 			jwaoo_toy_capacity_sensor_read_values = jwaoo_toy_sensor_read_values_dummy;
 		}
 
-		if (jwaoo_toy_env.sensor_poll_delay > 0) {
-			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_SLOW;
+		jwaoo_toy_env.sensor_poll_enable = true;
 
-			if (!ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
-				ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
-			}
-		} else {
-			jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_FAST;
-
-			ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
-			if (jwaoo_toy_sensor_notify_busy() == 0) {
-				jwaoo_toy_sensor_poll();
-			}
+		if (!ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
+			ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
 		}
 	} else {
-		jwaoo_toy_env.sensor_poll_mode = JWAOO_SENSOR_POLL_MODE_NONE;
+		jwaoo_toy_env.sensor_poll_enable = false;
 		ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
 
 		if (jwaoo_toy_capacity_sensor_set_enable) {
@@ -197,8 +188,6 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 			jwaoo_toy_accel_sensor_set_enable(false);
 		}
 	}
-
-	println("sensor_poll_mode = %d", jwaoo_toy_env.sensor_poll_mode);
 
 	return true;
 }
