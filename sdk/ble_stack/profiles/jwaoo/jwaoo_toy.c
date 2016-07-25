@@ -279,14 +279,22 @@ bool jwaoo_toy_flash_check_crc(uint32_t addr, uint32_t size, uint8_t crc_raw)
 
 bool jwaoo_toy_flash_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw)
 {
-	uint8_t crc = 0xFF;
+	uint8_t crc_read = 0xFF;
+	uint8_t crc_write = 0xFF;
+
+	println("spi_flash_block_erase: 0x%04x", wraddr);
+
+	if (spi_flash_block_erase(wraddr, SPI_ERASE_MODE) != ERR_OK) {
+		println("Failed to spi_flash_block_erase");
+		return false;
+	}
 
 	println("%s: 0x%04x [%d]=> 0x%04x", __FUNCTION__, rdaddr, size, wraddr);
 
 	while (size > 0) {
 		int ret;
 		int length;
-		static uint8_t buff[64];
+		static uint8_t buff[128];
 
 		length = (size > sizeof(buff) ? sizeof(buff) : size);
 
@@ -296,20 +304,34 @@ bool jwaoo_toy_flash_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size, 
 			return false;
 		}
 
+		crc_read = jwaoo_toy_calculate_crc(buff, length, crc_read);
+
 		ret = spi_flash_write_data(buff, wraddr, length);
 		if (ret != length) {
 			println("Failed to spi_flash_write_data: %d", ret);
 			return false;
 		}
 
-		crc = jwaoo_toy_calculate_crc(buff, length, crc);
+		ret = spi_flash_read_data(buff, wraddr, length);
+		if (ret != length) {
+			println("Failed to spi_flash_read_data: %d", ret);
+			return false;
+		}
+
+		crc_write = jwaoo_toy_calculate_crc(buff, length, crc_write);
+
 		rdaddr += length;
 		wraddr += length;
 		size -= length;
 	}
 
-	if (crc != crc_raw) {
-		println("crc not match: 0x%02x != 0x%02x", crc, crc_raw);
+	if (crc_read != crc_raw) {
+		println("read crc not match: 0x%02x != 0x%02x", crc_read, crc_raw);
+		return false;
+	}
+
+	if (crc_write != crc_raw) {
+		println("write crc not match: 0x%02x != 0x%02x", crc_write, crc_raw);
 		return false;
 	}
 
@@ -721,32 +743,9 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 				break;
 			}
 
-			println("jwaoo_toy_flash_check_crc SPI_PART_BACK_CODE");
-
-			if (!jwaoo_toy_flash_check_crc(SPI_PART_BACK_CODE,
-				jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)) {
-				println("Failed to jwaoo_toy_flash_check_crc");
-				break;
-			}
-
-			println("spi_flash_block_erase SPI_PART_FRONT_CODE");
-
-			if (spi_flash_block_erase(SPI_PART_FRONT_CODE, SPI_ERASE_MODE) != ERR_OK) {
-				println("Failed to spi_flash_block_erase SPI_PART_FRONT_CODE");
-				break;
-			}
-
 			if (!jwaoo_toy_flash_copy_code(SPI_PART_BACK_CODE, SPI_PART_FRONT_CODE,
 				jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)) {
 				println("Failed to jwaoo_toy_copy_code");
-				break;
-			}
-
-			println("jwaoo_toy_flash_check_crc SPI_PART_FRONT_CODE");
-
-			if (!jwaoo_toy_flash_check_crc(SPI_PART_FRONT_CODE,
-				jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)) {
-				println("Failed to jwaoo_toy_flash_check_crc");
 				break;
 			}
 
