@@ -46,6 +46,7 @@
 #define JWAOO_TOY_KEY_COUNT				4
 #define JWAOO_TOY_KEY_REPEAT_LONG		100
 #define JWAOO_TOY_KEY_REPEAT_SHORT		5
+#define JWAOO_TOY_READ_FLASH_ENABLE		0
 
 #define JWAOO_TOY_IDENTIFY				"JwaooToy"
 #define JWAOO_TOY_VERSION				0x20160702
@@ -138,6 +139,7 @@ enum
 	JWAOO_TOY_EVT_KEY_STATE,
 	JWAOO_TOY_EVT_KEY_CLICK,
 	JWAOO_TOY_EVT_KEY_LONG_CLICK,
+	JWAOO_TOY_EVT_UPGRADE_COMPLETE,
 };
 
 #pragma pack(1)
@@ -290,6 +292,7 @@ uint8_t jwaoo_toy_check_val_len(uint8_t char_code, uint8_t val_len);
 void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
 uint8_t jwaoo_toy_sensor_poll(void);
+bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw);
 
 void jwaoo_toy_on_key_repeat(struct jwaoo_toy_key *key);
 void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count);

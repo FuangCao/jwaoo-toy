@@ -34,6 +34,7 @@
 #include "prf_utils.h"
 #include "attm_util.h"
 #include "atts_util.h"
+#include "user_periph_setup.h"
 
 static uint16_t jwaoo_toy_svc = JWAOO_TOY_UUID_SVC;
 static struct att_char_desc jwaoo_toy_command_char = ATT_CHAR(ATT_CHAR_PROP_WR | ATT_CHAR_PROP_RD, 0, JWAOO_TOY_UUID_COMMAND);
@@ -182,6 +183,32 @@ static int jwaoo_toy_create_db_req_handler(ke_msg_id_t const msgid,
     cfm = KE_MSG_ALLOC(JWAOO_TOY_CREATE_DB_CFM, src_id, TASK_JWAOO_TOY, jwaoo_toy_create_db_cfm);
     cfm->status = status;
     ke_msg_send(cfm);
+
+    return (KE_MSG_CONSUMED);
+}
+
+static int jwaoo_toy_reboot_handler(ke_msg_id_t const msgid,
+                                         void *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id)
+{
+	platform_reset(RESET_AFTER_SPOTA_UPDATE);
+
+    return (KE_MSG_CONSUMED);
+}
+
+static int jwaoo_toy_upgrade_complete_handler(ke_msg_id_t const msgid,
+                                         void *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id)
+{
+	uint8_t event[2] = {
+		JWAOO_TOY_EVT_UPGRADE_COMPLETE,
+		jwaoo_toy_flash_copy(SPI_PART_BACK_CODE, SPI_PART_FRONT_CODE, jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)
+	};
+
+	jwaoo_toy_send_event(event, sizeof(event));
+	jwaoo_toy_env.flash_upgrade = false;
 
     return (KE_MSG_CONSUMED);
 }
@@ -400,6 +427,8 @@ const struct ke_msg_handler jwaoo_toy_idle[] =
 
 const struct ke_msg_handler jwaoo_toy_connected[] =
 {
+    { JWAOO_TOY_REBOOT,					(ke_msg_func_t) jwaoo_toy_reboot_handler },
+    { JWAOO_TOY_UPGRADE_COMPLETE,		(ke_msg_func_t) jwaoo_toy_upgrade_complete_handler },
     { JWAOO_TOY_SENSOR_POLL,			(ke_msg_func_t) jwaoo_toy_sensor_poll_handler },
 	{ JWAOO_TOY_KEY_REPORT_STATE,		(ke_msg_func_t) jwaoo_toy_key_report_state_handler },
 	{ JWAOO_TOY_KEY_REPORT_CLICK,		(ke_msg_func_t) jwaoo_toy_key_report_click_handler },

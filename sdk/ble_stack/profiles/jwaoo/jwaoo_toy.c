@@ -60,8 +60,6 @@
  ****************************************************************************************
  */
 
-extern struct jwaoo_toy_log_cache_tag uart2_log_cache;
-
 struct jwaoo_toy_env_tag jwaoo_toy_env __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
 struct jwaoo_toy_device_data_tag jwaoo_toy_device_data __attribute__((section("retention_mem_area0"), zero_init)); //@RETENTION MEMORY
 
@@ -277,7 +275,7 @@ bool jwaoo_toy_flash_check_crc(uint32_t addr, uint32_t size, uint8_t crc_raw)
 	return true;
 }
 
-bool jwaoo_toy_flash_copy_code(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw)
+bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw)
 {
 	uint8_t crc_read = 0xFF;
 	uint8_t crc_write = 0xFF;
@@ -380,6 +378,7 @@ void jwaoo_toy_disable(uint16_t conhdl)
 
 	jwaoo_toy_env.notify_busy_mask = 0;
 	jwaoo_toy_env.notify_enable_mask = 0;
+	jwaoo_toy_env.flash_upgrade = false;
 	jwaoo_toy_env.flash_write_enable = false;
 	jwaoo_toy_env.flash_write_success = false;
 	jwaoo_toy_sensor_set_enable(false);
@@ -559,13 +558,6 @@ uint8_t jwaoo_toy_send_response_text(uint8_t command, const char *fmt, ...)
 
 // ===============================================================================
 
-static void jwaoo_toy_reboot_timer(void)
-{
-	pr_pos_info();
-
-	platform_reset(RESET_AFTER_SPOTA_UPDATE);
-}
-
 void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t length)
 {
 	bool success = false;
@@ -599,7 +591,8 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 			break;
 		}
 
-		success = (app_easy_timer(100, jwaoo_toy_reboot_timer) != EASY_TIMER_INVALID_TIMER);
+		ke_timer_set(JWAOO_TOY_REBOOT, TASK_JWAOO_TOY, 100);
+		success = true;
 		break;
 
 	case JWAOO_TOY_CMD_SHUTDOWN:
@@ -659,6 +652,10 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		return;
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_ENABLE:
+		if (jwaoo_toy_env.flash_upgrade) {
+			break;
+		}
+
 		jwaoo_toy_env.flash_write_enable = (length > 1 && command->enable.value);
 		success = true;
 		break;
@@ -677,6 +674,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		break;
 
 	case JWAOO_TOY_CMD_FLASH_READ:
+#if JWAOO_TOY_READ_FLASH_ENABLE
 		if (length == 5) {
 			uint32_t address;
 
@@ -699,6 +697,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 				}
 			}
 		}
+#endif
 		break;
 
 	case JWAOO_TOY_CMD_FLASH_SEEK:
@@ -728,7 +727,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 			break;
 		}
 
-		if (jwaoo_toy_env.flash_write_enable && jwaoo_toy_env.flash_write_success) {
+		if (jwaoo_toy_env.flash_upgrade && jwaoo_toy_env.flash_write_enable && jwaoo_toy_env.flash_write_success) {
 			println("remote: crc = 0x%02x, length = %d", command->upgrade.crc, command->upgrade.length);
 			println("local:  crc = 0x%02x, length = %d",
 				jwaoo_toy_env.flash_write_crc, jwaoo_toy_env.flash_write_length);
@@ -743,14 +742,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 				break;
 			}
 
-			if (!jwaoo_toy_flash_copy_code(SPI_PART_BACK_CODE, SPI_PART_FRONT_CODE,
-				jwaoo_toy_env.flash_write_length, jwaoo_toy_env.flash_write_crc)) {
-				println("Failed to jwaoo_toy_copy_code");
-				break;
-			}
-
-			jwaoo_toy_env.flash_write_enable = false;
-			jwaoo_toy_env.flash_upgrade = false;
+			ke_timer_set(JWAOO_TOY_UPGRADE_COMPLETE, TASK_JWAOO_TOY, 0);
 			success = true;
 		}
 		break;
@@ -858,10 +850,9 @@ bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length)
 	if (jwaoo_toy_env.flash_write_enable) {
 		if (jwaoo_toy_process_flash_data_safe(data, length)) {
 			return true;
-		} else {
-			println("Failed to jwaoo_toy_process_flash_data_safe");
 		}
 
+		println("Failed to jwaoo_toy_process_flash_data_safe");
 		jwaoo_toy_env.flash_write_enable = false;
 	} else {
 		println("write flash is not enable");
