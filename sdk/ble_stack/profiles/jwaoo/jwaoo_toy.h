@@ -126,7 +126,7 @@ enum
 	JWAOO_TOY_CMD_FLASH_READ_BD_ADDR,
 	JWAOO_TOY_CMD_FLASH_WRITE_BD_ADDR,
 	JWAOO_TOY_CMD_SENSOR_ENABLE = 70,
-	JWAOO_TOY_CMD_MOTO_ENABLE = 80,
+	JWAOO_TOY_CMD_MOTO_SET_LEVEL = 80,
 	JWAOO_TOY_CMD_KEY_CLICK_ENABLE = 90,
 	JWAOO_TOY_CMD_KEY_LONG_CLICK_ENABLE,
 	JWAOO_TOY_CMD_KEY_MULTI_CLICK_ENABLE,
@@ -151,6 +151,7 @@ struct jwaoo_toy_command
 	union {
 		char text[1];
 		uint8_t bytes[1];
+		uint8_t level;
 		uint8_t value8;
 		uint16_t value16;
 		uint32_t value32;
@@ -164,6 +165,7 @@ struct jwaoo_toy_command
 			uint8_t value;
 
 			union {
+				uint8_t level;
 				uint8_t delay8;
 				uint16_t delay16;
 				uint32_t delay32;
@@ -251,6 +253,9 @@ struct jwaoo_toy_env_tag
 	bool key_multi_click_enable;
 	uint16_t key_long_click_delay;
 	uint16_t key_multi_click_delay;
+
+	uint8_t moto_level;
+	uint8_t moto_level_target;
 };
 
 /*
@@ -293,6 +298,7 @@ void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
 uint8_t jwaoo_toy_sensor_poll(void);
 bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw);
+void jwaoo_toy_moto_set_level(uint8_t level);
 
 void jwaoo_toy_on_key_repeat(struct jwaoo_toy_key *key);
 void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count);

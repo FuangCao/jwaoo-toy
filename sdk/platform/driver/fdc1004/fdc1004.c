@@ -121,13 +121,13 @@ bool fdc1004_set_enable(bool enable)
 		}
 
 		for (i = 0; i < 4; i++) {
-			ret = fdc1004_write_u16(FDC1004_REG_CONF_MEAS1 + i, i << 13 | 4 << 10 | 2 << 5);
+			ret = fdc1004_write_u16(FDC1004_REG_CONF_MEAS1 + i, i << 13 | 4 << 10 | 11 << 5);
 			if (ret < 0) {
 				println("Failed to fdc1004_write_u16: %d", ret);
 				return false;
 			}
 
-			ret = fdc1004_write_u16(FDC1004_REG_GAIN_CAL_CIN1 + i, 0xFFFF);
+			ret = fdc1004_write_u16(FDC1004_REG_GAIN_CAL_CIN1 + i, 3 << 14); // 0xFFFF);
 			if (ret < 0) {
 				println("Failed to fdc1004_write_u16: %d", ret);
 				return false;

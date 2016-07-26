@@ -47,7 +47,9 @@
 //*** <<< end of configuration section >>>    ***
 
 #define KB(a)				((a) << 10)
-#define LED_LEVEL_MAX		10
+#define PWM_LEVEL_MAX		18
+#define MOTO_START_LEVEL	PWM_LEVEL_MAX
+#define MOTO_START_TIME		3
 
 #define LED1_GPIO_PORT		GPIO_PORT_1
 #define LED1_GPIO_PIN		GPIO_PIN_0
@@ -67,6 +69,7 @@
 #define LED2_RESERVE		RESERVE_GPIO(LED2, LED2_GPIO_PORT, LED2_GPIO_PIN, PID_GPIO)
 #define LED2_CONFIG			GPIO_ConfigurePin(LED2_GPIO_PORT, LED2_GPIO_PIN, OUTPUT, PID_GPIO, false)
 
+#if 0
 #define BLUZZ_GPIO_PORT		GPIO_PORT_2
 #define BLUZZ_GPIO_PIN		GPIO_PIN_0
 #define BLUZZ_OPEN			GPIO_SetActive(BLUZZ_GPIO_PORT, BLUZZ_GPIO_PIN)
@@ -80,6 +83,7 @@
 #define RELAY_CLOSE			GPIO_SetActive(RELAY_GPIO_PORT, RELAY_GPIO_PIN)
 #define RELAY_RESERVE		RESERVE_GPIO(RELAY, RELAY_GPIO_PORT, RELAY_GPIO_PIN, PID_GPIO)
 #define RELAY_CONFIG		GPIO_ConfigurePin(RELAY_GPIO_PORT, RELAY_GPIO_PIN, OUTPUT, PID_GPIO, true)
+#endif
 
 #define KEY_GPIO_RESERVE(index) \
 	RESERVE_GPIO(KEY##index, KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, PID_GPIO)
@@ -105,32 +109,50 @@
 #define KEY4_GPIO_PIN		GPIO_PIN_4
 #define KEY4_GPIO_IRQ		GPIO3_IRQn
 
-#define LEDR_GPIO_PORT		GPIO_PORT_2
-#define LEDR_GPIO_PIN		GPIO_PIN_6
-#define LEDR_RESERVE		RESERVE_GPIO(LEDR, LEDR_GPIO_PORT, LEDR_GPIO_PIN, PID_PWM2)
-#define LEDR_LEVEL(level)	LED_SET_LEVEL(R, 2, level)
-
-#define LEDG_GPIO_PORT		GPIO_PORT_2
-#define LEDG_GPIO_PIN		GPIO_PIN_8
-#define LEDG_RESERVE		RESERVE_GPIO(LEDG, LEDG_GPIO_PORT, LEDG_GPIO_PIN, PID_PWM3)
-#define LEDG_LEVEL(level)	LED_SET_LEVEL(G, 3, level)
-
-#define LEDB_GPIO_PORT		GPIO_PORT_2
-#define LEDB_GPIO_PIN		GPIO_PIN_9
-#define LEDB_RESERVE		RESERVE_GPIO(LEDB, LEDB_GPIO_PORT, LEDB_GPIO_PIN, PID_PWM4)
-#define LEDB_LEVEL(level)	LED_SET_LEVEL(B, 4, level)
-
-#define LED_SET_LEVEL(color, pwm, level) \
+#define PWM_SET_LEVEL(name, pwm, level, active_low) \
 	do { \
-		if (level > 0) { \
+		if ((level) < 1) { \
+			GPIO_ConfigurePin(name##_GPIO_PORT, name##_GPIO_PIN, OUTPUT, PID_GPIO, active_low); \
+		} else if ((level) < (PWM_LEVEL_MAX)) { \
 			timer2_set_sw_pause(PWM_2_3_4_SW_PAUSE_ENABLED); \
-			timer2_set_pwm##pwm##_duty_cycle(LED_LEVEL_MAX - (level)); \
+			timer2_set_pwm##pwm##_duty_cycle(level); \
 			timer2_set_sw_pause(PWM_2_3_4_SW_PAUSE_DISABLED); \
-			GPIO_ConfigurePin(LED##color##_GPIO_PORT, LED##color##_GPIO_PIN, OUTPUT, PID_PWM##pwm, true); \
+			GPIO_ConfigurePin(name##_GPIO_PORT, name##_GPIO_PIN, OUTPUT, PID_PWM##pwm, active_low); \
 		} else { \
-			GPIO_ConfigurePin(LED##color##_GPIO_PORT, LED##color##_GPIO_PIN, OUTPUT, PID_GPIO, true); \
+			GPIO_ConfigurePin(name##_GPIO_PORT, name##_GPIO_PIN, OUTPUT, PID_GPIO, !(active_low)); \
 		} \
 	} while (0)
+
+#define LED_SET_LEVEL(name, pwm, level) \
+	PWM_SET_LEVEL(name, pwm, PWM_LEVEL_MAX - (level), true)
+
+#define MOTO_GPIO_PORT			GPIO_PORT_2
+#define MOTO_GPIO_PIN			GPIO_PIN_0
+
+#if 1
+#define MOTO_RESERVE			RESERVE_GPIO(MOTO, MOTO_GPIO_PORT, MOTO_GPIO_PIN, PID_PWM2)
+#define MOTO_SET_LEVEL(level)	PWM_SET_LEVEL(MOTO, 2, level, false)
+#else
+#define MOTO_RESERVE			RESERVE_GPIO(MOTO, MOTO_GPIO_PORT, MOTO_GPIO_PIN, PID_GPIO)
+#define MOTO_SET_LEVEL(level)	GPIO_ConfigurePin(MOTO_GPIO_PORT, MOTO_GPIO_PIN, OUTPUT, PID_GPIO, (level) > 0)
+#endif
+
+#if 0
+#define LEDR_GPIO_PORT			GPIO_PORT_2
+#define LEDR_GPIO_PIN			GPIO_PIN_6
+#define LEDR_RESERVE			RESERVE_GPIO(LEDR, LEDR_GPIO_PORT, LEDR_GPIO_PIN, PID_PWM2)
+#define LEDR_SET_LEVEL(level)	LED_SET_LEVEL(LEDR, 2, level)
+
+#define LEDG_GPIO_PORT			GPIO_PORT_2
+#define LEDG_GPIO_PIN			GPIO_PIN_8
+#define LEDG_RESERVE			RESERVE_GPIO(LEDG, LEDG_GPIO_PORT, LEDG_GPIO_PIN, PID_PWM3)
+#define LEDG_SET_LEVEL(level)	LED_SET_LEVEL(LEDG, 3, level)
+
+#define LEDB_GPIO_PORT			GPIO_PORT_2
+#define LEDB_GPIO_PIN			GPIO_PIN_9
+#define LEDB_RESERVE			RESERVE_GPIO(LEDB, LEDB_GPIO_PORT, LEDB_GPIO_PIN, PID_PWM4)
+#define LEDB_SET_LEVEL(level)	LED_SET_LEVEL(LEDB, 4, level)
+#endif
 
 /****************************************************************************************/
 /* i2c eeprom configuration                                                             */

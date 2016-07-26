@@ -55,8 +55,11 @@ i.e.
 	LED1_RESERVE;
 	LED2_RESERVE;
 
-#if 0
+#ifdef BLUZZ_RESERVE
 	BLUZZ_RESERVE;
+#endif
+
+#ifdef RELAY_RESERVE
 	RELAY_RESERVE;
 #endif
 
@@ -67,9 +70,21 @@ i.e.
 #endif
 	KEY_GPIO_RESERVE(4);
 
+#ifdef LEDR_RESERVE
 	LEDR_RESERVE;
+#endif
+
+#ifdef LEDG_RESERVE
 	LEDG_RESERVE;
+#endif
+
+#ifdef LEDB_RESERVE
 	LEDB_RESERVE;
+#endif
+
+#ifdef MOTO_RESERVE
+	MOTO_RESERVE;
+#endif
 
 	RESERVE_GPIO(SPI_CLK, SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, PID_SPI_CLK);
 	RESERVE_GPIO(SPI_DO, SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, PID_SPI_DO);
@@ -91,8 +106,11 @@ void set_pad_functions(void)        // set gpio port function mode
 	LED1_CONFIG;
 	LED2_CONFIG;
 
-#if 0
+#ifdef BLUZZ_CONFIG
 	BLUZZ_CONFIG;
+#endif
+
+#ifdef RELAY_CONFIG
 	RELAY_CONFIG;
 #endif
 
@@ -204,11 +222,25 @@ void periph_init(void)
 	app_config_key(KEY4_GPIO_IRQ, app_key4_isr, KEY4_GPIO_PORT, KEY4_GPIO_PIN);
 
 	set_tmr_enable(CLK_PER_REG_TMR_ENABLED);
-	set_tmr_div(CLK_PER_REG_TMR_DIV_8);
-	timer2_init(HW_CAN_NOT_PAUSE_PWM_2_3_4, PWM_2_3_4_SW_PAUSE_ENABLED, LED_LEVEL_MAX);
-	LEDR_LEVEL(0);
-	LEDG_LEVEL(0);
-	LEDB_LEVEL(0);
+	// set_tmr_div(CLK_PER_REG_TMR_DIV_8);
+	set_tmr_div(CLK_PER_REG_TMR_DIV_1);
+	timer2_init(HW_CAN_NOT_PAUSE_PWM_2_3_4, PWM_2_3_4_SW_PAUSE_ENABLED, PWM_LEVEL_MAX);
+
+#ifdef LEDR_SET_LEVEL
+	LEDR_SET_LEVEL(0);
+#endif
+
+#ifdef LEDG_SET_LEVEL
+	LEDG_SET_LEVEL(0);
+#endif
+
+#ifdef LEDB_SET_LEVEL
+	LEDB_SET_LEVEL(0);
+#endif
+
+#ifdef MOTO_SET_LEVEL
+	MOTO_SET_LEVEL(0);
+#endif
 
 	app_spi_flash_init();
 	jwaoo_toy_read_device_data();

@@ -25,8 +25,9 @@
 #include "rwip_config.h"
 
 #if (BLE_JWAOO_TOY_SERVER)
-#include "stdarg.h"
+#include "pwm.h"
 #include "uart.h"
+#include "stdarg.h"
 #include "spi_flash.h"
 #include "attm_util.h"
 #include "atts_util.h"
@@ -337,6 +338,14 @@ bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8
 
 	return true;
 }
+
+void jwaoo_toy_moto_set_level(uint8_t level)
+{
+	MOTO_SET_LEVEL(level);
+	jwaoo_toy_env.moto_level = level;
+}
+
+// ===============================================================================
 
 void jwaoo_toy_init(void)
 {
@@ -774,6 +783,20 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		} else {
 			success = jwaoo_toy_sensor_set_enable(false);
 			jwaoo_toy_env.sensor_enable = false;
+		}
+		break;
+
+	// ================================================================================
+
+	case JWAOO_TOY_CMD_MOTO_SET_LEVEL:
+		if (jwaoo_toy_env.flash_upgrade) {
+			break;
+		}
+
+		if (length == 2) {
+			success = true;
+			jwaoo_toy_env.moto_level_target = command->level;
+			ke_timer_set(JWAOO_TOY_MOTO_SET_LEVEL, TASK_JWAOO_TOY, 0);
 		}
 		break;
 

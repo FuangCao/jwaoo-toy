@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Tue Jul 26 13:38:59 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Tue Jul 26 21:49:25 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -29,14 +29,6 @@ default_app_on_encrypt_req_ind <= USED 0
 default_app_on_ltk_exch <= USED 0
 default_app_on_pairing_request <= USED 0
 default_app_on_tk_exch_nomitm <= USED 0
-;FILE app_easy_msg_utils.o
-app_easy_msg_free_callback <= USED 0
-app_easy_msg_modify <= USED 0
-app_easy_msg_set <= USED 0
-app_easy_wakeup <= USED 0
-app_easy_wakeup_free <= USED 0
-app_easy_wakeup_set <= USED 0
-app_msg_utils_api_process_handler <= USED 0
 ;FILE app_easy_security.o
 app_easy_security_csrk_exch <= USED 0
 app_easy_security_csrk_get_active <= USED 0
@@ -142,7 +134,6 @@ timer0_set_pwm_low_counter <= USED 0
 timer0_set_pwm_on_counter <= USED 0
 timer0_start <= USED 0
 timer0_stop <= USED 0
-timer2_set_pwm2_duty_cycle <= USED 0
 timer2_set_pwm3_duty_cycle <= USED 0
 timer2_set_pwm4_duty_cycle <= USED 0
 timer2_set_pwm_frequency <= USED 0
