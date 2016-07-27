@@ -27,6 +27,7 @@
 
 #if (BLE_JWAOO_TOY_SERVER)
 #include "gap.h"
+#include "pwm.h"
 #include "uart.h"
 #include "gattc_task.h"
 #include "jwaoo_toy.h"
@@ -237,13 +238,67 @@ static int jwaoo_toy_moto_set_level_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const src_id)
 {
 	if (jwaoo_toy_env.moto_level != jwaoo_toy_env.moto_level_target) {
+		uint8_t level;
+
 		if (jwaoo_toy_env.moto_level == 0) {
-			jwaoo_toy_moto_set_level(MOTO_START_LEVEL);
-			ke_timer_set(msgid, dest_id, MOTO_START_TIME);
+			level = MOTO_BOOST_LEVEL;
+			ke_timer_set(msgid, dest_id, MOTO_BOOST_TIME);
 		} else {
-			jwaoo_toy_moto_set_level(jwaoo_toy_env.moto_level_target);
+			level = jwaoo_toy_env.moto_level_target;
+		}
+
+		println("level = %d", level);
+		MOTO_SET_LEVEL(level);
+		jwaoo_toy_env.moto_level = level;
+	}
+
+    return (KE_MSG_CONSUMED);
+}
+
+static int jwaoo_toy_moto_set_mode_handler(ke_msg_id_t const msgid,
+                                         void *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id)
+{
+	uint8_t level;
+
+	if (jwaoo_toy_env.moto_rand_delay > 0) {
+		if (jwaoo_toy_env.moto_level == jwaoo_toy_env.moto_rand_level) {
+			jwaoo_toy_env.moto_rand_level = (rand() % PWM_LEVEL_MAX) + 1;
+			jwaoo_toy_env.moto_rand_delay = (rand() & 0x0F) + 1;
+
+			println("rand: level = %d, delay = %d", jwaoo_toy_env.moto_rand_level, jwaoo_toy_env.moto_rand_delay);
+		}
+
+		if (jwaoo_toy_env.moto_level < jwaoo_toy_env.moto_rand_level) {
+			level = jwaoo_toy_env.moto_level + 1;
+		} else {
+			level = jwaoo_toy_env.moto_level - 1;
+		}
+
+		ke_timer_set(JWAOO_TOY_MOTO_SET_MODE, TASK_JWAOO_TOY, jwaoo_toy_env.moto_rand_delay);
+	} else {
+		if (jwaoo_toy_env.moto_level_add) {
+			level = jwaoo_toy_env.moto_level + jwaoo_toy_env.moto_step;
+			if (level > jwaoo_toy_env.moto_max) {
+				level = jwaoo_toy_env.moto_max;
+				jwaoo_toy_env.moto_level_add = false;
+			}
+		} else {
+			level = jwaoo_toy_env.moto_level - jwaoo_toy_env.moto_step;
+			if (level < jwaoo_toy_env.moto_min || level > jwaoo_toy_env.moto_max) {
+				level = jwaoo_toy_env.moto_min;
+				jwaoo_toy_env.moto_level_add = true;
+			}
+		}
+
+		if (jwaoo_toy_env.moto_delay > 0) {
+			ke_timer_set(JWAOO_TOY_MOTO_SET_MODE, TASK_JWAOO_TOY, jwaoo_toy_env.moto_delay);
 		}
 	}
+
+	jwaoo_toy_env.moto_level_target = level;
+	ke_timer_set(JWAOO_TOY_MOTO_SET_LEVEL, TASK_JWAOO_TOY, 0);
 
     return (KE_MSG_CONSUMED);
 }
@@ -417,8 +472,7 @@ static int gattc_write_cmd_ind_handler(ke_msg_id_t const msgid,
 		break;
 	}
 
-	if (param->response)
-	{
+	if (param->response) {
 		atts_write_rsp_send(jwaoo_toy_env.con_info.conidx, param->handle, PRF_ERR_OK);
 	}
 
@@ -446,6 +500,7 @@ const struct ke_msg_handler jwaoo_toy_connected[] =
 {
     { JWAOO_TOY_REBOOT,					(ke_msg_func_t) jwaoo_toy_reboot_handler },
 	{ JWAOO_TOY_SENSOR_POLL,			(ke_msg_func_t) jwaoo_toy_sensor_poll_handler },
+	{ JWAOO_TOY_MOTO_SET_MODE,			(ke_msg_func_t) jwaoo_toy_moto_set_mode_handler },
     { JWAOO_TOY_MOTO_SET_LEVEL,			(ke_msg_func_t) jwaoo_toy_moto_set_level_handler },
     { JWAOO_TOY_UPGRADE_COMPLETE,		(ke_msg_func_t) jwaoo_toy_upgrade_complete_handler },
 	{ JWAOO_TOY_KEY_REPORT_STATE,		(ke_msg_func_t) jwaoo_toy_key_report_state_handler },

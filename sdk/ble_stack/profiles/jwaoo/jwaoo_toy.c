@@ -341,8 +341,52 @@ bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8
 
 void jwaoo_toy_moto_set_level(uint8_t level)
 {
-	MOTO_SET_LEVEL(level);
-	jwaoo_toy_env.moto_level = level;
+	jwaoo_toy_env.moto_level_target = level;
+	ke_timer_set(JWAOO_TOY_MOTO_SET_LEVEL, TASK_JWAOO_TOY, 0);
+}
+
+bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
+{
+	jwaoo_toy_env.moto_rand_delay = 0;
+
+	switch (mode) {
+	case 0:
+		level = 0;
+	case 1:
+		jwaoo_toy_env.moto_step = PWM_LEVEL_MAX;
+		jwaoo_toy_env.moto_delay = 0;
+		jwaoo_toy_env.moto_min = jwaoo_toy_env.moto_max = level;
+		break;
+
+	case 2:
+	case 3:
+		jwaoo_toy_env.moto_min = 1;
+		jwaoo_toy_env.moto_max = PWM_LEVEL_MAX;
+		jwaoo_toy_env.moto_step = 1;
+		jwaoo_toy_env.moto_delay = (mode == 2 ? 11 : 5);
+		break;
+
+	case 4:
+	case 5:
+		jwaoo_toy_env.moto_min = 0;
+		jwaoo_toy_env.moto_max = PWM_LEVEL_MAX;
+		jwaoo_toy_env.moto_step = PWM_LEVEL_MAX;
+		jwaoo_toy_env.moto_delay = (mode == 4 ? 100 : 50);
+		break;
+
+	case 6:
+		jwaoo_toy_env.moto_rand_delay = 1;
+		break;
+
+	default:
+		return false;
+	}
+
+	if (!ke_timer_active(JWAOO_TOY_MOTO_SET_MODE, TASK_JWAOO_TOY)) {
+		ke_timer_set(JWAOO_TOY_MOTO_SET_MODE, TASK_JWAOO_TOY, 0);
+	}
+
+	return true;
 }
 
 // ===============================================================================
@@ -721,6 +765,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 
 	case JWAOO_TOY_CMD_FLASH_WRITE_START:
 		if (jwaoo_toy_env.flash_write_enable) {
+			jwaoo_toy_moto_set_mode(0, 0);
 			jwaoo_toy_sensor_set_enable(false);
 			jwaoo_toy_env.flash_write_success = true;
 			jwaoo_toy_env.flash_write_length = 0;
@@ -788,16 +833,12 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 
 	// ================================================================================
 
-	case JWAOO_TOY_CMD_MOTO_SET_LEVEL:
-		if (jwaoo_toy_env.flash_upgrade) {
+	case JWAOO_TOY_CMD_MOTO_SET_MODE:
+		if (jwaoo_toy_env.flash_upgrade || length != 3) {
 			break;
 		}
 
-		if (length == 2) {
-			success = true;
-			jwaoo_toy_env.moto_level_target = command->level;
-			ke_timer_set(JWAOO_TOY_MOTO_SET_LEVEL, TASK_JWAOO_TOY, 0);
-		}
+		success = jwaoo_toy_moto_set_mode(command->moto.mode, command->moto.level);
 		break;
 
 	// ================================================================================

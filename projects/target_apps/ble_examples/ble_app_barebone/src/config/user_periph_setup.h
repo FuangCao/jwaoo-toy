@@ -48,8 +48,8 @@
 
 #define KB(a)				((a) << 10)
 #define PWM_LEVEL_MAX		18
-#define MOTO_START_LEVEL	PWM_LEVEL_MAX
-#define MOTO_START_TIME		3
+#define MOTO_BOOST_LEVEL	PWM_LEVEL_MAX
+#define MOTO_BOOST_TIME		3
 
 #define LED1_GPIO_PORT		GPIO_PORT_1
 #define LED1_GPIO_PIN		GPIO_PIN_0

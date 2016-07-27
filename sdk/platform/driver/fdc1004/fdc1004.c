@@ -127,7 +127,7 @@ bool fdc1004_set_enable(bool enable)
 				return false;
 			}
 
-			ret = fdc1004_write_u16(FDC1004_REG_GAIN_CAL_CIN1 + i, 3 << 14); // 0xFFFF);
+			ret = fdc1004_write_u16(FDC1004_REG_GAIN_CAL_CIN1 + i, 1 << 14);
 			if (ret < 0) {
 				println("Failed to fdc1004_write_u16: %d", ret);
 				return false;

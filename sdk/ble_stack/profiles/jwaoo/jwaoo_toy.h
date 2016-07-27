@@ -126,7 +126,7 @@ enum
 	JWAOO_TOY_CMD_FLASH_READ_BD_ADDR,
 	JWAOO_TOY_CMD_FLASH_WRITE_BD_ADDR,
 	JWAOO_TOY_CMD_SENSOR_ENABLE = 70,
-	JWAOO_TOY_CMD_MOTO_SET_LEVEL = 80,
+	JWAOO_TOY_CMD_MOTO_SET_MODE = 80,
 	JWAOO_TOY_CMD_KEY_CLICK_ENABLE = 90,
 	JWAOO_TOY_CMD_KEY_LONG_CLICK_ENABLE,
 	JWAOO_TOY_CMD_KEY_MULTI_CLICK_ENABLE,
@@ -151,7 +151,6 @@ struct jwaoo_toy_command
 	union {
 		char text[1];
 		uint8_t bytes[1];
-		uint8_t level;
 		uint8_t value8;
 		uint16_t value16;
 		uint32_t value32;
@@ -165,7 +164,6 @@ struct jwaoo_toy_command
 			uint8_t value;
 
 			union {
-				uint8_t level;
 				uint8_t delay8;
 				uint16_t delay16;
 				uint32_t delay32;
@@ -177,6 +175,11 @@ struct jwaoo_toy_command
 			uint8_t rdlen;
 			uint8_t data[];
 		} i2c;
+
+		struct {
+			uint8_t mode;
+			uint8_t level;
+		} moto;
 	};
 };
 
@@ -254,8 +257,15 @@ struct jwaoo_toy_env_tag
 	uint16_t key_long_click_delay;
 	uint16_t key_multi_click_delay;
 
+	uint8_t moto_min;
+	uint8_t moto_max;
 	uint8_t moto_level;
 	uint8_t moto_level_target;
+	uint8_t moto_step;
+	uint8_t moto_delay;
+	uint8_t moto_rand_delay;
+	uint8_t moto_rand_level;
+	bool moto_level_add;
 };
 
 /*
