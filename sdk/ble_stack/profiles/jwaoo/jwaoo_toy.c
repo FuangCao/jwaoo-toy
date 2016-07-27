@@ -342,11 +342,13 @@ bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8
 void jwaoo_toy_moto_set_level(uint8_t level)
 {
 	jwaoo_toy_env.moto_level_target = level;
-	ke_timer_set(JWAOO_TOY_MOTO_SET_LEVEL, TASK_JWAOO_TOY, 0);
+	ke_timer_set(JWAOO_TOY_MOTO_SET_LEVEL, TASK_APP, 0);
 }
 
 bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
 {
+	println("Moto: mode = %d, level = %d", mode, level);
+
 	jwaoo_toy_env.moto_rand_delay = 0;
 
 	switch (mode) {
@@ -355,6 +357,7 @@ bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
 	case 1:
 		jwaoo_toy_env.moto_step = PWM_LEVEL_MAX;
 		jwaoo_toy_env.moto_delay = 0;
+		jwaoo_toy_env.moto_level_backup = level;
 		jwaoo_toy_env.moto_min = jwaoo_toy_env.moto_max = level;
 		break;
 
@@ -382,8 +385,10 @@ bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
 		return false;
 	}
 
-	if (!ke_timer_active(JWAOO_TOY_MOTO_SET_MODE, TASK_JWAOO_TOY)) {
-		ke_timer_set(JWAOO_TOY_MOTO_SET_MODE, TASK_JWAOO_TOY, 0);
+	jwaoo_toy_env.moto_mode = mode;
+
+	if (!ke_timer_active(JWAOO_TOY_MOTO_SET_MODE, TASK_APP)) {
+		ke_timer_set(JWAOO_TOY_MOTO_SET_MODE, TASK_APP, 0);
 	}
 
 	return true;
@@ -398,7 +403,9 @@ void jwaoo_toy_init(void)
 
 	jwaoo_toy_env.sensor_poll_delay = 20;
 	jwaoo_toy_env.key_long_click_delay = 200;
+#if JWAOO_TOY_MULTI_CLICK_ENABLE
 	jwaoo_toy_env.key_multi_click_delay = 30;
+#endif
 
     // Create JWAOO_TOY task
     ke_task_create(TASK_JWAOO_TOY, &TASK_DESC_JWAOO_TOY);
@@ -644,7 +651,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 			break;
 		}
 
-		ke_timer_set(JWAOO_TOY_REBOOT, TASK_JWAOO_TOY, 100);
+		ke_timer_set(JWAOO_TOY_REBOOT, TASK_APP, 100);
 		success = true;
 		break;
 
@@ -867,6 +874,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		break;
 
 	case JWAOO_TOY_CMD_KEY_MULTI_CLICK_ENABLE:
+#if JWAOO_TOY_MULTI_CLICK_ENABLE
 		if (length > 1 && command->enable.value) {
 			jwaoo_toy_env.key_multi_click_enable = true;
 
@@ -882,6 +890,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		}
 
 		success = true;
+#endif
 		break;
 
 	default:
@@ -960,25 +969,109 @@ static inline void jwaoo_toy_report_key_long_click(struct jwaoo_toy_key *key)
 
 // ================================================================================
 
+static uint8_t jwaoo_toy_moto_level_add(void)
+{
+	uint8_t value = jwaoo_toy_env.moto_level + 1;
+
+	if (value > PWM_LEVEL_MAX) {
+		value = PWM_LEVEL_MAX;
+	}
+
+	jwaoo_toy_moto_set_mode(1, value);
+
+	return value;
+}
+
+static uint8_t jwaoo_toy_moto_level_sub(void)
+{
+	uint8_t value;
+
+	if (jwaoo_toy_env.moto_level > 1) {
+		value = jwaoo_toy_env.moto_level - 1;
+	} else {
+		value = 0;
+	}
+
+	jwaoo_toy_moto_set_mode(1, value);
+
+	return value;
+}
+
+static uint8_t jwaoo_toy_moto_mode_add(void)
+{
+	uint8_t value = jwaoo_toy_env.moto_mode + 1;
+	if (value > JWAOO_TOY_MOTO_MODE_MAX) {
+		value = 1;
+	}
+
+	jwaoo_toy_moto_set_mode(value, jwaoo_toy_env.moto_level_backup);
+
+	return value;
+}
+
+static void jwaoo_toy_led1_blink(void)
+{
+	LED1_OPEN;
+	ke_timer_set(JWAOO_TOY_LED1_BLINK, TASK_APP, JWAOO_TOY_LED1_BLINK_DELAY);
+}
+
 void jwaoo_toy_on_key_repeat(struct jwaoo_toy_key *key)
 {
 	println("repeat%d: repeat = %d", key->code, key->repeat);
+
+	jwaoo_toy_led1_blink();
+
+	switch (key->code) {
+	case JWAOO_TOY_KEYCODE_UP:
+		jwaoo_toy_moto_level_add();
+		break;
+
+	case JWAOO_TOY_KEYCODE_DOWN:
+		if (jwaoo_toy_moto_level_sub() == 0 && key->repeat > 10) {
+			println("todo shutdown");
+		}
+		break;
+	}
 }
 
 void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 {
 	println("clicked%d: count = %d", key->code, count);
 
+	jwaoo_toy_led1_blink();
+
 	key->count = 0;
 
+#if JWAOO_TOY_MULTI_CLICK_ENABLE
 	if (jwaoo_toy_env.key_multi_click_enable) {
 		jwaoo_toy_report_key_click(key, count);
+	}
+#else
+	if (jwaoo_toy_env.key_long_click_enable) {
+		jwaoo_toy_report_key_click(key, count);
+	}
+#endif
+
+	switch (key->code) {
+	case JWAOO_TOY_KEYCODE_UP:
+		jwaoo_toy_moto_level_add();
+		break;
+
+	case JWAOO_TOY_KEYCODE_DOWN:
+		jwaoo_toy_moto_level_sub();
+		break;
+
+	case JWAOO_TOY_KEYCODE_O:
+		jwaoo_toy_moto_mode_add();
+		break;
 	}
 }
 
 void jwaoo_toy_on_key_long_clicked(struct jwaoo_toy_key *key)
 {
 	println("long clicked: code = %d", key->code);
+
+	jwaoo_toy_led1_blink();
 
 	key->count = 0;
 
@@ -1005,9 +1098,16 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 		ke_timer_set(key->repeat_timer, TASK_APP, JWAOO_TOY_KEY_REPEAT_LONG);
 		ke_timer_set(key->long_click_timer, TASK_APP, jwaoo_toy_env.key_long_click_delay);
 	} else {
+#if JWAOO_TOY_MULTI_CLICK_ENABLE
 		ke_timer_set(key->multi_click_timer, TASK_APP, jwaoo_toy_env.key_multi_click_delay);
+#else
+		if (key->count > 0) {
+			jwaoo_toy_on_key_clicked(key, 1);
+		}
+#endif
 	}
 
+#if JWAOO_TOY_MULTI_CLICK_ENABLE
 	if (jwaoo_toy_env.key_multi_click_enable == false) {
 		if (jwaoo_toy_env.key_long_click_enable) {
 			if (value == 0 && key->count > 0) {
@@ -1021,6 +1121,17 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 			jwaoo_toy_report_key_state(key, value);
 		}
 	}
+#else
+	if (jwaoo_toy_env.key_long_click_enable == false) {
+		if (jwaoo_toy_env.key_click_enable) {
+			if (value > 0) {
+				jwaoo_toy_report_key_click(key, 1);
+			}
+		} else {
+			jwaoo_toy_report_key_state(key, value);
+		}
+	}
+#endif
 }
 
 #endif //BLE_JWAOO_TOY_SERVER

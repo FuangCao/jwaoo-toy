@@ -27,6 +27,7 @@
  ****************************************************************************************
  */
 
+#include "jwaoo_toy.h"
 #include "rwip_config.h"             // SW configuration
 #include "user_barebone.h"
 #include "arch_api.h"
@@ -64,39 +65,19 @@ struct mnf_specific_data_ad_structure mnf_data __attribute__((section("retention
  ****************************************************************************************
 */
 
-static timer_hnd app_blink_timer_id = EASY_TIMER_INVALID_TIMER;
-
-static void user_app_blink_timer(void)
-{
-	LED1_BLINK;
-	app_blink_timer_id = app_easy_timer(50, user_app_blink_timer);
-}
-
-static void user_app_set_blink_enable(bool enable)
-{
-	if (enable) {
-		if (app_blink_timer_id == EASY_TIMER_INVALID_TIMER) {
-			app_blink_timer_id = app_easy_timer(0, user_app_blink_timer);
-		}
-	} else {
-		if (app_blink_timer_id != EASY_TIMER_INVALID_TIMER) {
-			app_easy_timer_cancel(app_blink_timer_id);
-			app_blink_timer_id = EASY_TIMER_INVALID_TIMER;
-		}
-
-		LED1_CLOSE;
-	}
-}
-
-static void user_app_set_connect_state(bool connected)
+static void user_app_set_blink_enable(bool enable, bool connected)
 {
 	if (connected) {
+		ke_timer_clear(JWAOO_TOY_LED2_BLINK, TASK_APP);
 		LED2_OPEN;
+	} else if (enable) {
+		if (!ke_timer_active(JWAOO_TOY_LED2_BLINK, TASK_APP)) {
+			ke_timer_set(JWAOO_TOY_LED2_BLINK, TASK_APP, 0);
+		}
 	} else {
+		ke_timer_clear(JWAOO_TOY_LED2_BLINK, TASK_APP);
 		LED2_CLOSE;
 	}
-
-	user_app_set_blink_enable(false);
 }
 
 /**
@@ -146,7 +127,7 @@ static void adv_data_update_timer_cb()
 {
     app_adv_data_update_timer_used = 0xFFFF;
 
-	user_app_set_blink_enable(false);
+	user_app_set_blink_enable(false, false);
     app_easy_gap_advertise_stop();
 }
 
@@ -205,7 +186,7 @@ static void app_add_ad_struct(struct gapm_start_advertise_cmd *cmd, void *ad_str
 
 void user_app_adv_start(void)
 {
-	user_app_set_blink_enable(true);
+	user_app_set_blink_enable(true, false);
 
     // Schedule the next advertising data update
     app_adv_data_update_timer_used = app_easy_timer(APP_ADV_DATA_UPDATE_TO, adv_data_update_timer_cb);
@@ -224,7 +205,7 @@ void user_app_connection(uint8_t connection_idx, struct gapc_connection_req_ind 
 {
     if (app_env[connection_idx].conidx != GAP_INVALID_CONIDX)
     {
-		user_app_set_connect_state(true);
+		user_app_set_blink_enable(false, true);
 
         app_connection_idx = connection_idx;
 
@@ -264,7 +245,7 @@ void user_app_disconnect(struct gapc_disconnect_ind const *param)
 {
      uint8_t state = ke_state_get(TASK_APP);
 
-	 user_app_set_connect_state(false);
+	 user_app_set_blink_enable(false, false);
 
     if ((state == APP_SECURITY) ||
         (state == APP_CONNECTED) ||

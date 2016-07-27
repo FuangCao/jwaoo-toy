@@ -43,13 +43,21 @@
  ****************************************************************************************
  */
 
+#define JWAOO_TOY_MULTI_CLICK_ENABLE	0
 #define JWAOO_TOY_KEY_COUNT				4
 #define JWAOO_TOY_KEY_REPEAT_LONG		100
 #define JWAOO_TOY_KEY_REPEAT_SHORT		5
-#define JWAOO_TOY_READ_FLASH_ENABLE		0
+#define JWAOO_TOY_KEYCODE_UP			4
+#define JWAOO_TOY_KEYCODE_DOWN			2
+#define JWAOO_TOY_KEYCODE_O				1
+#define JWAOO_TOY_KEYCODE_MAX			3
 
 #define JWAOO_TOY_IDENTIFY				"JwaooToy"
 #define JWAOO_TOY_VERSION				0x20160702
+#define JWAOO_TOY_READ_FLASH_ENABLE		0
+#define JWAOO_TOY_MOTO_MODE_MAX			6
+#define JWAOO_TOY_LED1_BLINK_DELAY		5
+#define JWAOO_TOY_LED2_BLINK_DELAY		50
 
 /*
  * ENUMERATIONS
@@ -209,7 +217,6 @@ struct jwaoo_toy_key
 	uint8_t value;
 	uint8_t count;
 	uint8_t repeat;
-
 	uint16_t repeat_timer;
 	uint16_t long_click_timer;
 	uint16_t multi_click_timer;
@@ -253,13 +260,18 @@ struct jwaoo_toy_env_tag
 
 	bool key_click_enable;
 	bool key_long_click_enable;
-	bool key_multi_click_enable;
 	uint16_t key_long_click_delay;
+
+#if JWAOO_TOY_MULTI_CLICK_ENABLE
+	bool key_multi_click_enable;
 	uint16_t key_multi_click_delay;
+#endif
 
 	uint8_t moto_min;
 	uint8_t moto_max;
+	uint8_t moto_mode;
 	uint8_t moto_level;
+	uint8_t moto_level_backup;
 	uint8_t moto_level_target;
 	uint8_t moto_step;
 	uint8_t moto_delay;
