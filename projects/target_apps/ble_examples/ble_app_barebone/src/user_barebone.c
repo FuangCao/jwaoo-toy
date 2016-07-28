@@ -68,14 +68,10 @@ struct mnf_specific_data_ad_structure mnf_data __attribute__((section("retention
 static void user_app_set_blink_enable(bool enable, bool connected)
 {
 	if (connected) {
-		ke_timer_clear(JWAOO_TOY_LED2_BLINK, TASK_APP);
 		LED2_OPEN;
 	} else if (enable) {
-		if (!ke_timer_active(JWAOO_TOY_LED2_BLINK, TASK_APP)) {
-			ke_timer_set(JWAOO_TOY_LED2_BLINK, TASK_APP, 0);
-		}
+		LED2_BLINK_SET(0, PWM_LEVEL_MAX, PWM_LEVEL_MAX, 50, 0);
 	} else {
-		ke_timer_clear(JWAOO_TOY_LED2_BLINK, TASK_APP);
 		LED2_CLOSE;
 	}
 }

@@ -31,6 +31,118 @@
 #include "mpu6050.h"
 #include "fdc1004.h"
 #include "jwaoo_toy.h"
+#include "jwaoo_toy_task.h"
+
+struct jwaoo_pwm_device jwaoo_pwm_moto = MOTO_PWM_INIT;
+struct jwaoo_pwm_device jwaoo_pwm_led1 = LED1_PWM_INIT;
+struct jwaoo_pwm_device jwaoo_pwm_led2 = LED2_PWM_INIT;
+
+bool jwaoo_pwm_set_level(struct jwaoo_pwm_device *device, uint8_t level)
+{
+	static uint8_t busy_mask;
+
+	if (device->timer == JWAOO_TOY_MOTO_BLINK) {
+		jwaoo_toy_env.moto_level = level;
+
+		if (device->level == 0 && level > 0) {
+			level = MOTO_BOOST_LEVEL;
+			ke_timer_set(JWAOO_TOY_MOTO_BOOST, TASK_APP, MOTO_BOOST_TIME);
+		}
+	}
+
+	device->level = level;
+
+	if (device->active_low) {
+		level = PWM_LEVEL_MAX - level;
+	}
+
+	if (level > 0 && level < PWM_LEVEL_MAX) {
+		uint8_t pwm = device->pwm;
+
+		if (pwm == 0xFF) {
+			for (pwm = 0; (busy_mask & (1 << pwm)); pwm++) {
+				if (pwm >= 2) {
+					return false;
+				}
+			}
+
+			busy_mask |= (1 << pwm);
+			device->pwm = pwm;
+		}
+
+		timer2_set_sw_pause(PWM_2_3_4_SW_PAUSE_ENABLED);
+		SetWord16(PWM2_DUTY_CYCLE + (pwm * 2), level);
+		timer2_set_sw_pause(PWM_2_3_4_SW_PAUSE_DISABLED);
+		GPIO_ConfigurePin(device->port, device->pin, OUTPUT, (GPIO_FUNCTION) (PID_PWM2 + pwm), device->active_low);
+	} else {
+		GPIO_ConfigurePin(device->port, device->pin, OUTPUT, PID_GPIO, level > 0);
+
+		if (device->pwm != 0xFF) {
+			busy_mask &= ~(1 << device->pwm);
+			device->pwm = 0xFF;
+		}
+	}
+
+	println("pwm = %d, level = %d, busy = 0x%02x", device->pwm, device->level, busy_mask);
+
+	return true;
+}
+
+static void jwaoo_pwm_set_blink_direction(struct jwaoo_pwm_device *device, bool add)
+{
+	device->blink_add = add;
+
+	if (device->blink_count > 0) {
+		if (device->blink_count == 1) {
+			device->blink_delay = 0;
+		}
+
+		device->blink_count--;
+	}
+}
+
+bool jwaoo_pwm_blink_walk(struct jwaoo_pwm_device *device)
+{
+	uint8_t level;
+
+	if (device->blink_min == device->blink_max) {
+		level = device->blink_min;
+		device->blink_delay = 0;
+	} else if (device->blink_add) {
+		level = device->level + device->blink_step;
+		if (level > device->blink_max) {
+			level = device->blink_max - device->blink_step;
+			jwaoo_pwm_set_blink_direction(device, false);
+		}
+	} else {
+		level = device->level - device->blink_step;
+		if (level < device->blink_min || level > device->blink_max) {
+			level = device->blink_min + device->blink_step;
+			jwaoo_pwm_set_blink_direction(device, true);
+		}
+	}
+
+	jwaoo_pwm_set_level(device, level);
+
+	if (device->blink_delay > 0) {
+		ke_timer_set(device->timer, TASK_APP, device->blink_delay);
+		return false;
+	}
+
+	return true;
+}
+
+void jwaoo_pwm_blink_set(struct jwaoo_pwm_device *device, uint8_t min, uint8_t max, uint8_t step, uint8_t delay, uint8_t count)
+{
+	device->blink_min = min;
+	device->blink_max = max;
+	device->blink_step = step;
+	device->blink_delay = delay;
+	device->blink_count = count;
+
+	ke_timer_clear(device->timer, TASK_APP);
+	ke_timer_set(device->timer, TASK_APP, 0);
+}
 
 #if DEVELOPMENT_DEBUG
 
@@ -103,8 +215,13 @@ void set_pad_functions(void)        // set gpio port function mode
 	// GPIO_ConfigurePin(UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, INPUT, PID_UART2_RX, false);
 #endif
 
+#ifdef LED1_CONFIG
 	LED1_CONFIG;
+#endif
+
+#ifdef LED2_CONFIG
 	LED2_CONFIG;
+#endif
 
 #ifdef BLUZZ_CONFIG
 	BLUZZ_CONFIG;
@@ -240,6 +357,14 @@ void periph_init(void)
 
 #ifdef MOTO_SET_LEVEL
 	MOTO_SET_LEVEL(0);
+#endif
+
+#ifdef LED1_SET_LEVEL
+	LED1_SET_LEVEL(0);
+#endif
+
+#ifdef LED2_SET_LEVEL
+	LED2_SET_LEVEL(0);
 #endif
 
 	app_spi_flash_init();

@@ -43,14 +43,13 @@
  ****************************************************************************************
  */
 
-#define JWAOO_TOY_MULTI_CLICK_ENABLE	0
 #define JWAOO_TOY_KEY_COUNT				4
 #define JWAOO_TOY_KEY_REPEAT_LONG		100
 #define JWAOO_TOY_KEY_REPEAT_SHORT		5
-#define JWAOO_TOY_KEYCODE_UP			4
-#define JWAOO_TOY_KEYCODE_DOWN			2
-#define JWAOO_TOY_KEYCODE_O				1
-#define JWAOO_TOY_KEYCODE_MAX			3
+#define JWAOO_TOY_KEYCODE_UP			3
+#define JWAOO_TOY_KEYCODE_DOWN			1
+#define JWAOO_TOY_KEYCODE_O				0
+#define JWAOO_TOY_KEYCODE_MAX			2
 
 #define JWAOO_TOY_IDENTIFY				"JwaooToy"
 #define JWAOO_TOY_VERSION				0x20160702
@@ -150,6 +149,22 @@ enum
 	JWAOO_TOY_EVT_UPGRADE_COMPLETE,
 };
 
+enum
+{
+	JWAOO_TOY_KEY_VALUE_UP,
+	JWAOO_TOY_KEY_VALUE_DOWN,
+	JWAOO_TOY_KEY_VALUE_REPEAT,
+	JWAOO_TOY_KEY_VALUE_LONG,
+};
+
+enum
+{
+	JWAOO_TOY_BATTERY_NORMAL,
+	JWAOO_TOY_BATTERY_LOW,
+	JWAOO_TOY_BATTERY_FULL,
+	JWAOO_TOY_BATTERY_CHARGING,
+};
+
 #pragma pack(1)
 
 struct jwaoo_toy_command
@@ -217,6 +232,12 @@ struct jwaoo_toy_key
 	uint8_t value;
 	uint8_t count;
 	uint8_t repeat;
+	uint8_t skip;
+	uint8_t last_value;
+	bool lock_enable;
+	bool repeat_enable;
+	bool long_click_enable;
+	bool multi_click_enable;
 	uint16_t repeat_timer;
 	uint16_t long_click_timer;
 	uint16_t multi_click_timer;
@@ -258,26 +279,22 @@ struct jwaoo_toy_env_tag
 	uint8_t sensor_capacity_dead;
 	uint16_t sensor_poll_delay;
 
+	bool key_locked;
+	bool key_lock_pending;
 	bool key_click_enable;
 	bool key_long_click_enable;
-	uint16_t key_long_click_delay;
-
-#if JWAOO_TOY_MULTI_CLICK_ENABLE
 	bool key_multi_click_enable;
+	uint16_t key_long_click_delay;
 	uint16_t key_multi_click_delay;
-#endif
 
-	uint8_t moto_min;
-	uint8_t moto_max;
 	uint8_t moto_mode;
 	uint8_t moto_level;
 	uint8_t moto_level_backup;
-	uint8_t moto_level_target;
-	uint8_t moto_step;
-	uint8_t moto_delay;
 	uint8_t moto_rand_delay;
 	uint8_t moto_rand_level;
-	bool moto_level_add;
+
+	uint8_t battery_state;
+	uint8_t battery_level;
 };
 
 /*
@@ -320,11 +337,8 @@ void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
 uint8_t jwaoo_toy_sensor_poll(void);
 bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw);
+void jwaoo_toy_set_battery_state(uint8_t state);
 void jwaoo_toy_moto_set_level(uint8_t level);
-
-void jwaoo_toy_on_key_repeat(struct jwaoo_toy_key *key);
-void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count);
-void jwaoo_toy_on_key_long_clicked(struct jwaoo_toy_key *key);
 
 bool jwaoo_toy_read_device_data(void);
 uint8_t jwaoo_toy_write_data(uint16_t attr, const void *data, int size);
@@ -346,6 +360,9 @@ uint8_t jwaoo_toy_send_response_text(uint8_t command, const char *fmt, ...);
 
 void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t length);
 bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length);
+void jwaoo_toy_process_key_repeat(struct jwaoo_toy_key *key);
+void jwaoo_toy_process_key_long_click(struct jwaoo_toy_key *key);
+void jwaoo_toy_process_key_multi_click(struct jwaoo_toy_key *key);
 void jwaoo_toy_process_key(uint8_t index, uint8_t value);
 
 static inline uint16_t jwaoo_toy_build_value16(const uint8_t *data)

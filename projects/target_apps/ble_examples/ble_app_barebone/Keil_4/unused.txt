@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Wed Jul 27 21:40:11 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Thu Jul 28 22:17:46 2016
 ;VERSION 0.2
 ;FILE adc.o
 adc_calibrate <= USED 0
@@ -107,7 +107,6 @@ i2c_update_u8 <= USED 0
 dummyf <= USED 0
 ;FILE jwaoo_toy.o
 jwaoo_toy_flash_check_crc <= USED 0
-jwaoo_toy_moto_set_level <= USED 0
 jwaoo_toy_send_command_data <= USED 0
 jwaoo_toy_send_command_text <= USED 0
 jwaoo_toy_send_command_u16 <= USED 0
@@ -115,6 +114,7 @@ jwaoo_toy_send_command_u32 <= USED 0
 jwaoo_toy_send_command_u8 <= USED 0
 jwaoo_toy_send_response_u16 <= USED 0
 jwaoo_toy_send_response_u8 <= USED 0
+jwaoo_toy_set_battery_state <= USED 0
 ;FILE ke_task.obj
 ;FILE llc.obj
 ;FILE mpu6050.o
@@ -135,6 +135,7 @@ timer0_set_pwm_low_counter <= USED 0
 timer0_set_pwm_on_counter <= USED 0
 timer0_start <= USED 0
 timer0_stop <= USED 0
+timer2_set_pwm2_duty_cycle <= USED 0
 timer2_set_pwm3_duty_cycle <= USED 0
 timer2_set_pwm4_duty_cycle <= USED 0
 timer2_set_pwm_frequency <= USED 0
