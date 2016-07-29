@@ -47,12 +47,10 @@
 //*** <<< end of configuration section >>>    ***
 
 #define KB(a)				((a) << 10)
+#define PWM_AUTO_ALLOC		0
 #define PWM_LEVEL_MAX		18
 #define MOTO_BOOST_LEVEL	PWM_LEVEL_MAX
 #define MOTO_BOOST_TIME		3
-
-#define JWAOO_PWM_INIT(port, pin, active_low, timer) \
-	{ 0xFF, port, pin, active_low, timer }
 
 #define JWAOO_PWM_BLINK_OPEN(device) \
 	jwaoo_pwm_blink_set(device, PWM_LEVEL_MAX, PWM_LEVEL_MAX, 0, 0, 0)
@@ -62,7 +60,6 @@
 
 #define MOTO_GPIO_PORT			GPIO_PORT_2
 #define MOTO_GPIO_PIN			GPIO_PIN_0
-#define MOTO_PWM_INIT			JWAOO_PWM_INIT(MOTO_GPIO_PORT, MOTO_GPIO_PIN, false, JWAOO_TOY_MOTO_BLINK)
 #define MOTO_RESERVE			RESERVE_GPIO(MOTO, MOTO_GPIO_PORT, MOTO_GPIO_PIN, PID_GPIO)
 #define MOTO_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_moto, level);
 #define MOTO_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_moto)
@@ -90,7 +87,6 @@
 
 #define LED1_GPIO_PORT			GPIO_PORT_1
 #define LED1_GPIO_PIN			GPIO_PIN_0
-#define LED1_PWM_INIT			JWAOO_PWM_INIT(LED1_GPIO_PORT, LED1_GPIO_PIN, false, JWAOO_TOY_LED1_BLINK)
 #define LED1_RESERVE			RESERVE_GPIO(LED1, LED1_GPIO_PORT, LED1_GPIO_PIN, PID_GPIO)
 #define LED1_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_led1, level)
 #define LED1_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_led1)
@@ -101,7 +97,6 @@
 
 #define LED2_GPIO_PORT			GPIO_PORT_1
 #define LED2_GPIO_PIN			GPIO_PIN_1
-#define LED2_PWM_INIT			JWAOO_PWM_INIT(LED2_GPIO_PORT, LED2_GPIO_PIN, false, JWAOO_TOY_LED2_BLINK)
 #define LED2_RESERVE			RESERVE_GPIO(LED2, LED2_GPIO_PORT, LED2_GPIO_PIN, PID_GPIO)
 #define LED2_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_led2, level)
 #define LED2_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_led2)
@@ -225,7 +220,7 @@ struct jwaoo_pwm_device
 	GPIO_PORT port;
 	GPIO_PIN pin;
 	bool active_low;
-	uint16_t timer;
+	uint16_t blink_timer;
 
 	uint8_t level;
 	bool blink_add;

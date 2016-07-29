@@ -157,7 +157,7 @@ static int jwaoo_toy_moto_blink_handler(ke_msg_id_t const msgid,
 {
 	if (jwaoo_toy_env.moto_mode == 6) {
 		MOTO_SET_LEVEL((rand() % PWM_LEVEL_MAX) + 1);
-		ke_timer_set(msgid, dest_id, (rand() & 0x0F) + 1);
+		ke_timer_set(msgid, dest_id, (rand() & 0x3F) + 1);
 	} else {
 		MOTO_BLINK_WALK;
 	}
