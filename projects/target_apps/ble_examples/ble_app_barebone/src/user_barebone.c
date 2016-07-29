@@ -182,6 +182,10 @@ static void app_add_ad_struct(struct gapm_start_advertise_cmd *cmd, void *ad_str
 
 void user_app_adv_start(void)
 {
+	if (!ke_timer_active(JWAOO_TOY_BATT_POLL, TASK_APP)) {
+		ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 1);
+	}
+
 	user_app_set_blink_enable(true, false);
 
     // Schedule the next advertising data update

@@ -222,6 +222,20 @@ static int jwaoo_toy_sensor_poll_handler(ke_msg_id_t const msgid,
     return (KE_MSG_CONSUMED);
 }
 
+static int jwaoo_toy_battery_report_state_handler(ke_msg_id_t const msgid,
+                                         struct jwaoo_toy_key_message const *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id)
+{
+	struct jwaoo_toy_command command = {
+		.type = JWAOO_TOY_EVT_BATT_INFO,
+		.battery.level = jwaoo_toy_env.battery_level,
+		.battery.voltage = jwaoo_toy_env.battery_voltage,
+	};
+
+	return jwaoo_toy_send_event(&command, 4);
+}
+
 static int jwaoo_toy_key_report_state_handler(ke_msg_id_t const msgid,
                                          struct jwaoo_toy_key_message const *param,
                                          ke_task_id_t const dest_id,
@@ -418,7 +432,8 @@ const struct ke_msg_handler jwaoo_toy_idle[] =
 const struct ke_msg_handler jwaoo_toy_connected[] =
 {
 	{ JWAOO_TOY_SENSOR_POLL,			(ke_msg_func_t) jwaoo_toy_sensor_poll_handler },
-    { JWAOO_TOY_UPGRADE_COMPLETE,		(ke_msg_func_t) jwaoo_toy_upgrade_complete_handler },
+	{ JWAOO_TOY_UPGRADE_COMPLETE,		(ke_msg_func_t) jwaoo_toy_upgrade_complete_handler },
+	{ JWAOO_TOY_BATT_REPORT_STATE,		(ke_msg_func_t) jwaoo_toy_battery_report_state_handler },
 	{ JWAOO_TOY_KEY_REPORT_STATE,		(ke_msg_func_t) jwaoo_toy_key_report_state_handler },
 	{ JWAOO_TOY_KEY_REPORT_CLICK,		(ke_msg_func_t) jwaoo_toy_key_report_click_handler },
 	{ JWAOO_TOY_KEY_REPORT_LONG_CLICK,	(ke_msg_func_t) jwaoo_toy_key_report_long_click_handler },

@@ -173,7 +173,7 @@ static bool jwaoo_toy_sensor_set_enable(bool enable)
 		jwaoo_toy_env.sensor_poll_enable = true;
 
 		if (!ke_timer_active(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY)) {
-			ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 0);
+			ke_timer_set(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY, 1);
 		}
 	} else {
 		jwaoo_toy_env.sensor_poll_enable = false;
@@ -797,7 +797,7 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 				break;
 			}
 
-			ke_timer_set(JWAOO_TOY_UPGRADE_COMPLETE, TASK_JWAOO_TOY, 0);
+			ke_timer_set(JWAOO_TOY_UPGRADE_COMPLETE, TASK_JWAOO_TOY, 1);
 			success = true;
 		}
 		break;
@@ -930,9 +930,13 @@ bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length)
 
 void jwaoo_toy_set_battery_state(uint8_t state)
 {
-	jwaoo_toy_env.battery_state = state;
-
 	println("battery_state = %d", state);
+
+	if (jwaoo_toy_env.battery_state == state) {
+		return;
+	}
+
+	jwaoo_toy_env.battery_state = state;
 
 	switch (state) {
 	case JWAOO_TOY_BATTERY_LOW:

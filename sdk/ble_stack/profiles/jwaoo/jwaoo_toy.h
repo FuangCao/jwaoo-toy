@@ -203,6 +203,11 @@ struct jwaoo_toy_command
 			uint8_t mode;
 			uint8_t level;
 		} moto;
+
+		struct {
+			uint8_t level;
+			uint16_t voltage;
+		} battery;
 	};
 };
 
@@ -293,8 +298,10 @@ struct jwaoo_toy_env_tag
 	uint8_t moto_rand_delay;
 	uint8_t moto_rand_level;
 
+	bool battery_charging;
 	uint8_t battery_state;
 	uint8_t battery_level;
+	uint16_t battery_voltage;
 };
 
 /*
@@ -380,7 +387,7 @@ static inline uint8_t jwaoo_toy_send_command(const void *command, int size)
 	return jwaoo_toy_write_data(JWAOO_TOY_ATTR_COMMAND_DATA, command, size);
 }
 
-static inline uint8_t jwaoo_toy_send_event(const uint8_t *event, int size)
+static inline uint8_t jwaoo_toy_send_event(const void *event, int size)
 {
 	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_EVENT_DATA, event, size);
 }

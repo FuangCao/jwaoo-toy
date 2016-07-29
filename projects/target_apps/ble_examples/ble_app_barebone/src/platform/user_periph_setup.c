@@ -28,6 +28,7 @@
 #include "spi_flash.h"
 #include "i2c.h"
 #include "pwm.h"
+#include "adc.h"
 #include "mpu6050.h"
 #include "fdc1004.h"
 #include "jwaoo_toy.h"
@@ -177,7 +178,7 @@ void jwaoo_pwm_blink_set(struct jwaoo_pwm_device *device, uint8_t min, uint8_t m
 	device->blink_count = count;
 
 	ke_timer_clear(device->blink_timer, TASK_APP);
-	ke_timer_set(device->blink_timer, TASK_APP, 0);
+	ke_timer_set(device->blink_timer, TASK_APP, 1);
 }
 
 #if DEVELOPMENT_DEBUG
@@ -197,7 +198,9 @@ i.e.
 
 #ifdef CFG_PRINTF_UART2
 	RESERVE_GPIO(UART2_TX, UART1_TX_GPIO_PORT, UART1_TX_GPIO_PIN, PID_UART2_TX);
-	// RESERVE_GPIO(UART2_RX, UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, PID_UART2_RX);
+#ifdef UART1_RX_GPIO_PORT
+	RESERVE_GPIO(UART2_RX, UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, PID_UART2_RX);
+#endif
 #endif
 
 	LED1_RESERVE;
@@ -234,6 +237,10 @@ i.e.
 	MOTO_RESERVE;
 #endif
 
+#ifdef BATT_ADC_RESERVE
+	BATT_ADC_RESERVE;
+#endif
+
 	RESERVE_GPIO(SPI_CLK, SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, PID_SPI_CLK);
 	RESERVE_GPIO(SPI_DO, SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, PID_SPI_DO);
 	RESERVE_GPIO(SPI_DI, SPI_DI_GPIO_PORT, SPI_DI_GPIO_PIN, PID_SPI_DI);
@@ -248,7 +255,9 @@ void set_pad_functions(void)        // set gpio port function mode
 {
 #ifdef CFG_PRINTF_UART2
 	GPIO_ConfigurePin(UART1_TX_GPIO_PORT, UART1_TX_GPIO_PIN, OUTPUT, PID_UART2_TX, false);
-	// GPIO_ConfigurePin(UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, INPUT, PID_UART2_RX, false);
+#ifdef UART1_RX_GPIO_PORT
+	GPIO_ConfigurePin(UART1_RX_GPIO_PORT, UART1_RX_GPIO_PIN, INPUT, PID_UART2_RX, false);
+#endif
 #endif
 
 #ifdef LED1_CONFIG
@@ -265,6 +274,10 @@ void set_pad_functions(void)        // set gpio port function mode
 
 #ifdef RELAY_CONFIG
 	RELAY_CONFIG;
+#endif
+
+#ifdef BATT_ADC_CONFIG
+	BATT_ADC_CONFIG;
 #endif
 
 	KEY_GPIO_CONFIG(1);

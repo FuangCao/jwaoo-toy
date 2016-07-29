@@ -1,8 +1,6 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 29 11:59:29 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 29 17:46:28 2016
 ;VERSION 0.2
 ;FILE adc.o
-adc_calibrate <= USED 0
-adc_disable <= USED 0
 ;FILE app.o
 active_conhdl_to_conidx <= USED 0
 active_conidx_to_conhdl <= USED 0
@@ -84,11 +82,6 @@ read_rcx_freq <= USED 0
 select_lp_clk <= USED 0
 set_xtal16m_trim_value <= USED 0
 ;FILE atts_task.obj
-;FILE battery.o
-batt_cal_aaa <= USED 0
-batt_cal_cr1225 <= USED 0
-batt_cal_cr2032 <= USED 0
-battery_get_lvl <= USED 0
 ;FILE bmi160.o
 ;FILE boot_vectors.o
 ;FILE ch_map.obj
@@ -114,7 +107,6 @@ jwaoo_toy_send_command_u32 <= USED 0
 jwaoo_toy_send_command_u8 <= USED 0
 jwaoo_toy_send_response_u16 <= USED 0
 jwaoo_toy_send_response_u8 <= USED 0
-jwaoo_toy_set_battery_state <= USED 0
 ;FILE ke_task.obj
 ;FILE llc.obj
 ;FILE mpu6050.o

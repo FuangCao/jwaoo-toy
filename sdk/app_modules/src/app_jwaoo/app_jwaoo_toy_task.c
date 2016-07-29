@@ -29,6 +29,7 @@
  */
 
 #include "pwm.h"
+#include "adc.h"
 #include "co_math.h"			// Common Maths Definition
 #include "jwaoo_toy_task.h"          // Device Information Service Server Task API
 #include "jwaoo_toy.h"               // Device Information Service Definitions
@@ -96,6 +97,61 @@ static int jwaoo_toy_reboot_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const src_id)
 {
 	platform_reset(RESET_AFTER_SPOTA_UPDATE);
+
+    return (KE_MSG_CONSUMED);
+}
+
+static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
+                                         void *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id)
+{
+	int i;
+	uint8_t state;
+	uint8_t level;
+	uint32_t voltage;
+
+	adc_calibrate();
+
+    SetWord16(GP_ADC_CTRL_REG, GP_ADC_LDO_EN | GP_ADC_SE | GP_ADC_EN | ADC_CHANNEL_P01 << 6);
+    SetWord16(GP_ADC_CTRL2_REG, GP_ADC_DELAY_EN | GP_ADC_I20U | GP_ADC_ATTN3X);
+
+	for (i = 0, voltage = 0; i < 12; i++) {
+		SetBits16(GP_ADC_CTRL_REG, GP_ADC_SIGN, i & 1);
+		voltage += adc_get_sample();
+	}
+
+	adc_disable();
+
+	voltage = voltage * 1000 / 875;
+	jwaoo_toy_env.battery_voltage = voltage;
+
+	if (voltage <= BATT_VOLTAGE_MIN) {
+		level = 0;
+	} else if (voltage >= BATT_VOLTAGE_MAX) {
+		level = 100;
+	} else {
+		level = (voltage - BATT_VOLTAGE_MIN) * 100 / (BATT_VOLTAGE_MAX - BATT_VOLTAGE_MIN);
+	}
+
+	jwaoo_toy_env.battery_level = level;
+
+	if (jwaoo_toy_env.battery_charging) {
+		if (level < 100) {
+			state = JWAOO_TOY_BATTERY_CHARGING;
+		} else {
+			state = JWAOO_TOY_BATTERY_FULL;
+		}
+	} else if (level > BATT_LEVEL_LOW) {
+		state = JWAOO_TOY_BATTERY_NORMAL;
+	} else {
+		state = JWAOO_TOY_BATTERY_LOW;
+	}
+
+	jwaoo_toy_set_battery_state(state);
+
+	ke_timer_set(JWAOO_TOY_BATT_REPORT_STATE, TASK_JWAOO_TOY, 1);
+	ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
 
     return (KE_MSG_CONSUMED);
 }
@@ -172,6 +228,7 @@ static const struct ke_msg_handler app_jwaoo_toy_process_handlers[]=
     { JWAOO_TOY_DISABLE_IND,				(ke_msg_func_t) jwaoo_toy_disable_ind_handler }, 
 
 	{ JWAOO_TOY_REBOOT, 					(ke_msg_func_t) jwaoo_toy_reboot_handler },
+	{ JWAOO_TOY_BATT_POLL, 					(ke_msg_func_t) jwaoo_toy_battery_poll_handler },
 	{ JWAOO_TOY_KEY_LOCK, 					(ke_msg_func_t) jwaoo_toy_key_lock_handler },
 	{ JWAOO_TOY_LED1_BLINK, 				(ke_msg_func_t) jwaoo_toy_led1_blink_handler },
 	{ JWAOO_TOY_LED2_BLINK, 				(ke_msg_func_t) jwaoo_toy_led2_blink_handler },
