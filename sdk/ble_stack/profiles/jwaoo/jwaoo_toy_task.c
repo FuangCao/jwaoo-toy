@@ -227,13 +227,18 @@ static int jwaoo_toy_battery_report_state_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	struct jwaoo_toy_command command = {
-		.type = JWAOO_TOY_EVT_BATT_INFO,
-		.battery.level = jwaoo_toy_env.battery_level,
-		.battery.voltage = jwaoo_toy_env.battery_voltage,
-	};
+	if (jwaoo_toy_env.battery_report) {
+		struct jwaoo_toy_command command = {
+			.type = JWAOO_TOY_EVT_BATT_INFO,
+			.battery.state = jwaoo_toy_env.battery_state,
+			.battery.level = jwaoo_toy_env.battery_level,
+			.battery.voltage = jwaoo_toy_env.battery_voltage,
+		};
 
-	return jwaoo_toy_send_event(&command, 4);
+		jwaoo_toy_send_event(&command, 5);
+	}
+
+	return (KE_MSG_CONSUMED);
 }
 
 static int jwaoo_toy_key_report_state_handler(ke_msg_id_t const msgid,
@@ -243,7 +248,9 @@ static int jwaoo_toy_key_report_state_handler(ke_msg_id_t const msgid,
 {
 	uint8_t event[] = { JWAOO_TOY_EVT_KEY_STATE, param->key->code, param->value };
 
-	return jwaoo_toy_send_event(event, sizeof(event));
+	jwaoo_toy_send_event(event, sizeof(event));
+
+	return (KE_MSG_CONSUMED);
 }
 
 static int jwaoo_toy_key_report_click_handler(ke_msg_id_t const msgid,
@@ -255,7 +262,7 @@ static int jwaoo_toy_key_report_click_handler(ke_msg_id_t const msgid,
 
 	jwaoo_toy_send_event(event, sizeof(event));
 
-    return KE_MSG_CONSUMED;
+	return (KE_MSG_CONSUMED);
 }
 
 static int jwaoo_toy_key_report_long_click_handler(ke_msg_id_t const msgid,
@@ -267,7 +274,7 @@ static int jwaoo_toy_key_report_long_click_handler(ke_msg_id_t const msgid,
 
 	jwaoo_toy_send_event(event, sizeof(event));
 
-    return KE_MSG_CONSUMED;
+	return (KE_MSG_CONSUMED);
 }
 
 /**

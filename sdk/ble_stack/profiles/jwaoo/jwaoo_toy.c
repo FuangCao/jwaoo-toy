@@ -688,6 +688,24 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		}
 		break;
 
+	case JWAOO_TOY_CMD_FACTORY_ENABLE:
+		if (length > 1 && command->enable.value) {
+			jwaoo_toy_env.factory_enable = true;
+			jwaoo_toy_env.key_locked = false;
+			jwaoo_toy_env.key_click_enable = false;
+			jwaoo_toy_env.key_long_click_enable = false;
+			jwaoo_toy_env.key_multi_click_enable = false;
+		} else {
+			jwaoo_toy_env.factory_enable = false;
+		}
+		success = true;
+		break;
+
+	case JWAOO_TOY_CMD_BATT_EVENT_ENABLE:
+		jwaoo_toy_env.battery_report = (length > 1 && command->enable.value);
+		success = true;
+		break;
+
 	// ================================================================================
 
 	case JWAOO_TOY_CMD_BATT_INFO:
@@ -1031,6 +1049,10 @@ static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 {
 	println("clicked%d: value = %d, count = %d, repeat = %d", key->code, key->value, key->count, key->repeat);
 
+	if (jwaoo_toy_env.factory_enable || jwaoo_toy_env.flash_upgrade) {
+		return;
+	}
+
 	switch (key->code) {
 	case JWAOO_TOY_KEYCODE_UP:
 		jwaoo_toy_moto_level_add();
@@ -1053,10 +1075,6 @@ static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 static void jwaoo_toy_on_key_long_clicked(struct jwaoo_toy_key *key)
 {
 	println("long clicked: code = %d", key->code);
-
-	if (jwaoo_toy_keys[JWAOO_TOY_KEYCODE_UP].value == JWAOO_TOY_KEY_VALUE_LONG && jwaoo_toy_keys[JWAOO_TOY_KEYCODE_DOWN].value == JWAOO_TOY_KEY_VALUE_LONG) {
-		jwaoo_toy_env.key_locked = !jwaoo_toy_env.key_locked;
-	}
 }
 
 // ================================================================================
