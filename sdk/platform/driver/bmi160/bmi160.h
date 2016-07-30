@@ -134,5 +134,5 @@ static inline int bmi160_read_register(uint8_t addr, uint8_t *value)
 
 static inline int bmi160_write_register(uint8_t addr, uint8_t value)
 {
-	return bmi160_read_data(addr, &value, 1);
+	return bmi160_write_data(addr, &value, 1);
 }

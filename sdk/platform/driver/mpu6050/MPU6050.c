@@ -8,6 +8,7 @@
 
 static int mpu6050_reset(void)
 {
+	int i;
 	int ret;
 
 	ret = mpu6050_write_register(MPU6050_REG_PWR_MGMT_1, 1 << 7);
@@ -16,23 +17,20 @@ static int mpu6050_reset(void)
 		return ret;
 	}
 
-	while (1) {
+	for (i = 0; i < 100; i++) {
 		uint8_t value;
 
 		ret = mpu6050_read_register(MPU6050_REG_PWR_MGMT_1, &value);
 		if (ret < 0) {
 			println("Failed to mpu6050_read_register: %d", ret);
-			return ret;
+		} else if ((value & (1 << 7)) == 0) {
+			return 0;
+		} else {
+			println("MPU6050_REG_PWR_MGMT_1 = 0x%02x", value);
 		}
-
-		if ((value & (1 << 7)) == 0) {
-			break;
-		}
-
-		println("MPU6050_REG_PWR_MGMT_1 = 0x%02x", value);
 	}
 
-	return 0;
+	return -1;
 }
 
 bool mpu6050_set_enable(bool enable)
@@ -62,9 +60,9 @@ bool mpu6050_set_enable(bool enable)
 			return false;
 		}
 
-		value = (1 << 3);
+		value = (1 << 2);
 	} else {
-		value = (1 << 6 | 1 << 3);
+		value = (1 << 6 | 1 << 2);
 	}
 
 	ret = mpu6050_write_register(MPU6050_REG_PWR_MGMT_1, value);
@@ -72,6 +70,11 @@ bool mpu6050_set_enable(bool enable)
 		println("Failed to mpu6050_write_register: %d", ret);
 		return false;
 	}
+
+	mpu6050_read_register(MPU6050_REG_PWR_MGMT_1, &value);
+	println("MPU6050_REG_PWR_MGMT_1 = 0x%02x", value);
+	mpu6050_read_register(MPU6050_REG_ACCEL_CONFIG, &value);
+	println("MPU6050_REG_ACCEL_CONFIG = 0x%02x", value);
 
 	return true;
 }

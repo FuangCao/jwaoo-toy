@@ -138,5 +138,5 @@ static inline int mpu6050_read_register(uint8_t addr, uint8_t *value)
 
 static inline int mpu6050_write_register(uint8_t addr, uint8_t value)
 {
-	return mpu6050_read_data(addr, &value, 1);
+	return mpu6050_write_data(addr, &value, 1);
 }

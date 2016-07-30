@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Jul 29 20:16:29 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Sat Jul 30 18:16:07 2016
 ;VERSION 0.2
 ;FILE adc.o
 ;FILE app.o
@@ -82,6 +82,11 @@ read_rcx_freq <= USED 0
 select_lp_clk <= USED 0
 set_xtal16m_trim_value <= USED 0
 ;FILE atts_task.obj
+;FILE battery.o
+batt_cal_aaa <= USED 0
+batt_cal_cr1225 <= USED 0
+batt_cal_cr2032 <= USED 0
+battery_get_lvl <= USED 0
 ;FILE bmi160.o
 ;FILE boot_vectors.o
 ;FILE ch_map.obj
