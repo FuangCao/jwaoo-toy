@@ -57,7 +57,7 @@ static int fdc1004_read_id(void)
 
 	ret = fdc1004_read_u16(FDC1004_REG_DEVICE_ID, &value);
 	if (ret < 0) {
-		println("Failed to i2c_read_u16 FDC1004_REG_DEVICE_ID: %d", ret);
+		println("Failed to read FDC1004_REG_DEVICE_ID: %d", ret);
 		return ret;
 	}
 
@@ -70,7 +70,7 @@ static int fdc1004_read_id(void)
 
 	ret = fdc1004_read_u16(FDC1004_REG_MANUFACTURER_ID, &value);
 	if (ret < 0) {
-		println("Failed to i2c_read_u16 FDC1004_REG_MANUFACTURER_ID: %d", ret);
+		println("Failed to read FDC1004_REG_MANUFACTURER_ID: %d", ret);
 		return ret;
 	}
 
@@ -86,19 +86,28 @@ static int fdc1004_read_id(void)
 
 static int fdc1004_reset(void)
 {
+	int i;
 	int ret;
-	uint16_t value;
 
-	ret = fdc1004_write_u16(FDC1004_REG_FDC_CONF, 0x0000);
+	ret = fdc1004_write_u16(FDC1004_REG_FDC_CONF, 1 << 15);
 	if (ret < 0) {
 		return ret;
 	}
 
-	while (fdc1004_read_u16(FDC1004_REG_FDC_CONF, &value) < 0 || (value & (1 << 15))) {
-		println("FDC1004_REG_FDC_CONF = 0x%04x", value);
+	for (i = 0; i < 100; i++) {
+		uint16_t value;
+
+		ret = fdc1004_read_u16(FDC1004_REG_FDC_CONF, &value);
+		if (ret < 0) {
+			println("Failed to read FDC1004_REG_FDC_CONF: %d", ret);
+		} else if (value & (1 << 15)) {
+			println("FDC1004_REG_FDC_CONF = 0x%04x", value);
+		} else {
+			return 0;
+		}
 	}
 
-	return 0;
+	return -1;
 }
 
 bool fdc1004_set_enable(bool enable)
@@ -140,7 +149,7 @@ bool fdc1004_set_enable(bool enable)
 			return false;
 		}
 	} else {
-		ret = fdc1004_write_u16(FDC1004_REG_FDC_CONF, 0x0000);
+		fdc1004_write_u16(FDC1004_REG_FDC_CONF, 0x0000);
 		if (ret < 0) {
 			println("Failed to fdc1004_write_u16: %d", ret);
 			return false;
@@ -156,7 +165,7 @@ bool fdc1004_read_sensor_values(uint8_t *values)
 	uint8_t addr;
 
 	for (addr = FDC1004_REG_MEAS1_MSB; addr < FDC1004_REG_MEAS4_LSB; addr += 2) {
-		ret = fdc1004_read_data(addr, values, FDC1004_VALUE_BYTES);
+		ret = fdc1004_read_data(addr, values, 2);
 		if (ret < 0) {
 			println("Failed to fdc1004_read_data: %d", ret);
 			return false;

@@ -354,6 +354,7 @@ uint8_t jwaoo_toy_check_val_len(uint8_t char_code, uint8_t val_len);
 void jwaoo_toy_enable(uint16_t conhdl);
 void jwaoo_toy_disable(uint16_t conhdl); 
 uint8_t jwaoo_toy_sensor_poll(void);
+bool jwaoo_toy_sensor_set_enable(bool enable);
 bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw);
 void jwaoo_toy_set_battery_state(uint8_t state);
 void jwaoo_toy_moto_set_level(uint8_t level);

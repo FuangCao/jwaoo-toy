@@ -134,6 +134,24 @@ uint32_t rcx_period_diff __attribute__((section("retention_mem_area0"),zero_init
  * The Hclk and Pclk are set
  ****************************************************************************************
 */
+
+void udelay(uint32_t us)
+{
+    while (us--) {
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+        __nop();
+    }
+}
+
 void select_lp_clk()
 {
     if (CFG_LP_CLK == LP_CLK_FROM_OTP)

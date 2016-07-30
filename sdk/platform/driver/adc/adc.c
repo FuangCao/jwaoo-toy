@@ -21,6 +21,7 @@
  */
 
 #include "adc.h"
+#include "arch_system.h"
 
 /*
  * FUNCTION DEFINITIONS
@@ -86,30 +87,6 @@ int adc_get_sample(void)
 
 /**
  ****************************************************************************************
- * @brief Introduces a variable microsend delay for use with ADC peripheral.
- * @param[in] nof_us Number of microseconds to delay
- * @return void
- ****************************************************************************************
- */
-void adc_usDelay(uint32_t nof_us)
-{
-    while( nof_us-- ){
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-        __nop();
-    }
-}
-
-/**
- ****************************************************************************************
  * @brief Gets ADC sample from VBAT1V or VBAT3V power supplies using the 20 usec delay.
  * @param[in] sample_vbat1v :true = sample VBAT1V, false = sample VBAT3V
  * @return ADC VBAT1V or VBAT3V sample
@@ -120,7 +97,7 @@ uint32_t adc_get_vbat_sample(bool sample_vbat1v)
     uint32_t adc_sample, adc_sample2;
 
     adc_init(GP_ADC_SE, GP_ADC_SIGN, GP_ADC_ATTN3X);
-    adc_usDelay(20);
+    udelay(20);
 
     if (sample_vbat1v)
         adc_enable_channel(ADC_CHANNEL_VBAT1V);
@@ -128,7 +105,7 @@ uint32_t adc_get_vbat_sample(bool sample_vbat1v)
         adc_enable_channel(ADC_CHANNEL_VBAT3V);
 
     adc_sample = adc_get_sample();
-    adc_usDelay(1);
+    udelay(1);
     adc_init(GP_ADC_SE, 0, GP_ADC_ATTN3X );
 
     if (sample_vbat1v)
@@ -158,7 +135,7 @@ void adc_calibrate(void)
     int32_t  new_adc_off_p, new_adc_off_n;;
 
     SetWord16(GP_ADC_CTRL_REG, GP_ADC_LDO_EN|GP_ADC_SE|GP_ADC_EN);
-    adc_usDelay(20);
+    udelay(20);
 
     SetWord16(GP_ADC_OFFP_REG,  0x200);
     SetWord16(GP_ADC_OFFN_REG,  0x200);

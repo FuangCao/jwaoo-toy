@@ -23,8 +23,10 @@
 #include "arch.h"
 #include "arch_api.h"
 
-
 extern uint32_t lp_clk_sel;
+
+void udelay(uint32_t us);
+
 static __inline bool arch_clk_is_RCX20( void )
 {
   return (((lp_clk_sel == LP_CLK_RCX20) && (CFG_LP_CLK == LP_CLK_FROM_OTP)) || (CFG_LP_CLK == LP_CLK_RCX20));
