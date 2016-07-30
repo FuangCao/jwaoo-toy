@@ -117,7 +117,7 @@ static bool (*jwaoo_toy_capacity_sensor_read_values)(uint8_t values[4]) = jwaoo_
 
 uint8_t jwaoo_toy_sensor_poll(void)
 {
-	uint8_t buff[8];
+	uint8_t buff[3 + FDC1004_DATA_BYTES];
 
 	if (jwaoo_toy_env.sensor_accel_dead < 10) {
 		if (jwaoo_toy_accel_sensor_read_values(buff)) {
@@ -135,13 +135,13 @@ uint8_t jwaoo_toy_sensor_poll(void)
 			jwaoo_toy_env.sensor_capacity_dead = 0;
 		} else {
 			jwaoo_toy_env.sensor_capacity_dead++;
-			memset(buff + 3, 0x00, 4);
+			memset(buff + 3, 0x00, FDC1004_DATA_BYTES);
 		}
 	} else {
-		memset(buff + 3, 0x00, 4);
+		memset(buff + 3, 0x00, FDC1004_DATA_BYTES);
 	}
 
-	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, 7);
+	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, sizeof(buff));
 }
 
 static bool jwaoo_toy_sensor_set_enable(bool enable)

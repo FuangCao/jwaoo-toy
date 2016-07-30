@@ -121,13 +121,13 @@ bool fdc1004_set_enable(bool enable)
 		}
 
 		for (i = 0; i < 4; i++) {
-			ret = fdc1004_write_u16(FDC1004_REG_CONF_MEAS1 + i, i << 13 | 4 << 10 | 11 << 5);
+			ret = fdc1004_write_u16(FDC1004_REG_CONF_MEAS1 + i, i << 13 | 4 << 10 | 1 << 5);
 			if (ret < 0) {
 				println("Failed to fdc1004_write_u16: %d", ret);
 				return false;
 			}
 
-			ret = fdc1004_write_u16(FDC1004_REG_GAIN_CAL_CIN1 + i, 1 << 14);
+			ret = fdc1004_write_u16(FDC1004_REG_GAIN_CAL_CIN1 + i, 0xFFFF); // 1 << 14);
 			if (ret < 0) {
 				println("Failed to fdc1004_write_u16: %d", ret);
 				return false;
@@ -150,17 +150,19 @@ bool fdc1004_set_enable(bool enable)
 	return true;
 }
 
-bool fdc1004_read_sensor_values(uint8_t values[4])
+bool fdc1004_read_sensor_values(uint8_t *values)
 {
 	int ret;
 	uint8_t addr;
 
-	for (addr = FDC1004_REG_MEAS1_MSB; addr < FDC1004_REG_MEAS4_LSB; addr += 2, values++) {
-		ret = fdc1004_read_data(addr, values, 1);
+	for (addr = FDC1004_REG_MEAS1_MSB; addr < FDC1004_REG_MEAS4_LSB; addr += 2) {
+		ret = fdc1004_read_data(addr, values, FDC1004_VALUE_BYTES);
 		if (ret < 0) {
 			println("Failed to fdc1004_read_data: %d", ret);
 			return false;
 		}
+
+		values += FDC1004_VALUE_BYTES;
 	}
 
 	return true;

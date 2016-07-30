@@ -5,6 +5,8 @@
 #define FDC1004_I2C_ADDRESS			0x50
 #define FDC1004_MANUFACTURER_ID		0x5449
 #define FDC1004_DEVICE_ID           0x1004
+#define FDC1004_VALUE_BYTES			2
+#define FDC1004_DATA_BYTES			(FDC1004_VALUE_BYTES * 4)
 
 enum {
 	FDC1004_REG_MEAS1_MSB, // 0x0000 MSB portion of Measurement 1
@@ -33,7 +35,7 @@ enum {
 };
 
 bool fdc1004_set_enable(bool enable);
-bool fdc1004_read_sensor_values(uint8_t values[4]);
+bool fdc1004_read_sensor_values(uint8_t *values);
 
 static inline int fdc1004_read_data(uint8_t addr, uint8_t *data, int size)
 {
