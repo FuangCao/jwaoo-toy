@@ -149,7 +149,7 @@ bool fdc1004_set_enable(bool enable)
 			return false;
 		}
 	} else {
-		fdc1004_write_u16(FDC1004_REG_FDC_CONF, 0x0000);
+		ret = fdc1004_write_u16(FDC1004_REG_FDC_CONF, 0x0000);
 		if (ret < 0) {
 			println("Failed to fdc1004_write_u16: %d", ret);
 			return false;
