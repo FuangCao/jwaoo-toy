@@ -33,15 +33,6 @@
 #define NELEM(a) \
 	(sizeof(a) / sizeof((a)[0]))
 
-#define I2C_SEND_COMMAND(value) \
-	SetWord16(I2C_DATA_CMD_REG, (value))
-
-#define I2C_WAIT_WHILE_TX_FIFO_FULL() \
-	while((GetWord16(I2C_STATUS_REG) & TFNF) == 0)
-
-#define I2C_WAIT_UNTIL_TX_FIFO_EMPTY() \
-	while((GetWord16(I2C_STATUS_REG) & TFE) == 0)
-
 enum
 {
 	I2C_SPEED_100K = 1,

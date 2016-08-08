@@ -24,6 +24,46 @@
 
 #define I2C_AUTO_POWER_DOWN		1
 
+static int i2c_wait_while_tx_fifo_full()
+{
+	int i;
+
+	for (i = 0; i < 50000; i++) {
+		if (GetWord16(I2C_STATUS_REG) & TFNF) {
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+static int i2c_wait_until_tx_fifo_empty()
+{
+	int i;
+
+	for (i = 0; i < 50000; i++) {
+		if (GetWord16(I2C_STATUS_REG) & TFE) {
+			return 0;
+		}
+	}
+
+	return -1;
+}
+
+static int i2c_send_command(uint16_t command)
+{
+	int ret;
+
+	ret = i2c_wait_while_tx_fifo_full();
+	if (ret < 0) {
+		return ret;
+	}
+
+	SetWord16(I2C_DATA_CMD_REG, command);
+
+	return 0;
+}
+
 static int i2c_get_rx_fifo_size()
 {
 	int i;
@@ -108,8 +148,10 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 			int i;
 
 			for (i = msg->count; i > 0; i--) {
-				I2C_WAIT_WHILE_TX_FIFO_FULL();
-				I2C_SEND_COMMAND(0x0100);
+				ret = i2c_send_command(0x0100);
+				if (ret < 0) {
+					goto out_enable_irq;
+				}
 			}
 
 			while (data < data_end) {
@@ -129,8 +171,10 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 			msg++;
 		} else {
 			while (data < data_end) {
-				I2C_WAIT_WHILE_TX_FIFO_FULL();
-				I2C_SEND_COMMAND(*data++);
+				ret = i2c_send_command(*data++);
+				if (ret < 0) {
+					goto out_enable_irq;
+				}
 			}
 
 			msg++;
@@ -138,7 +182,10 @@ int i2c_transfer(uint8_t slave, struct i2c_message *msgs, int count)
 			if (msg >= msg_end || msg->read) {
 				uint16_t status;
 
-				I2C_WAIT_UNTIL_TX_FIFO_EMPTY();
+				ret = i2c_wait_until_tx_fifo_empty();
+				if (ret < 0) {
+					goto out_enable_irq;
+				}
 
 				status = GetWord16(I2C_TX_ABRT_SOURCE_REG);
 				if (status) {
