@@ -72,17 +72,22 @@ bool jwaoo_pwm_set_level(struct jwaoo_pwm_device *device, uint8_t level)
 #if PWM_AUTO_ALLOC
 	static uint8_t busy_mask;
 #endif
+	uint8_t level_old = device->level;
+
+	device->level = level;
 
 	if (device->blink_timer == JWAOO_TOY_MOTO_BLINK) {
 		jwaoo_toy_env.moto_level = level;
 
-		if (device->level == 0 && level > 0) {
-			level = MOTO_BOOST_LEVEL;
-			ke_timer_set(JWAOO_TOY_MOTO_BOOST, TASK_APP, MOTO_BOOST_TIME);
+		if (level > 0) {
+			if (level_old == 0) {
+				level = MOTO_BOOST_LEVEL;
+				ke_timer_set(JWAOO_TOY_MOTO_BOOST, TASK_APP, MOTO_BOOST_TIME);
+			} else if (level < MOTO_LEVEL_MIN) {
+				level = MOTO_LEVEL_MIN;
+			}
 		}
 	}
-
-	device->level = level;
 
 	if (device->active_low) {
 		level = PWM_LEVEL_MAX - level;
@@ -158,12 +163,12 @@ bool jwaoo_pwm_blink_walk(struct jwaoo_pwm_device *device)
 		}
 	}
 
-	jwaoo_pwm_set_level(device, level);
-
 	if (device->blink_delay == 0) {
+		jwaoo_pwm_set_level(device, device->blink_min);
 		return true;
 	}
 
+	jwaoo_pwm_set_level(device, level);
 	ke_timer_set(device->blink_timer, TASK_APP, device->blink_delay);
 
 	return false;
@@ -241,6 +246,14 @@ i.e.
 	BATT_ADC_RESERVE;
 #endif
 
+#ifdef CHG_DET_RESERVE
+	CHG_DET_RESERVE;
+#endif
+
+#ifdef CHG_STAT_RESERVE
+	CHG_STAT_RESERVE;
+#endif
+
 	RESERVE_GPIO(SPI_CLK, SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, PID_SPI_CLK);
 	RESERVE_GPIO(SPI_DO, SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, PID_SPI_DO);
 	RESERVE_GPIO(SPI_DI, SPI_DI_GPIO_PORT, SPI_DI_GPIO_PIN, PID_SPI_DI);
@@ -287,6 +300,14 @@ void set_pad_functions(void)        // set gpio port function mode
 #endif
 	KEY_GPIO_CONFIG(4);
 
+#ifdef CHG_DET_CONFIG
+	CHG_DET_CONFIG;
+#endif
+
+#ifdef CHG_STAT_CONFIG
+	CHG_STAT_CONFIG;
+#endif
+
 	GPIO_ConfigurePin(SPI_CS_GPIO_PORT, SPI_CS_GPIO_PIN, OUTPUT, PID_SPI_EN, true);
 	GPIO_ConfigurePin(SPI_CLK_GPIO_PORT, SPI_CLK_GPIO_PIN, OUTPUT, PID_SPI_CLK, false);
 	GPIO_ConfigurePin(SPI_DO_GPIO_PORT, SPI_DO_GPIO_PIN, OUTPUT, PID_SPI_DO, false);
@@ -316,10 +337,10 @@ static uint8_t app_process_key(IRQn_Type irq, uint8_t code, GPIO_PORT port, GPIO
 	GPIO_IRQ_INPUT_LEVEL level;
 
 	if (GPIO_GetPinStatus(port, pin)) {
-		value = 0;
+		value = !KEY_ACTIVE_LOW;
 		level = GPIO_IRQ_INPUT_LEVEL_LOW;
 	} else {
-		value = 1;
+		value = KEY_ACTIVE_LOW;
 		level = GPIO_IRQ_INPUT_LEVEL_HIGH;
 	}
 
@@ -332,7 +353,7 @@ static uint8_t app_process_key(IRQn_Type irq, uint8_t code, GPIO_PORT port, GPIO
 static void app_config_key(IRQn_Type irq, GPIO_handler_function_t isr, GPIO_PORT port, GPIO_PIN pin)
 {
 	GPIO_RegisterCallback(irq, isr);
-	GPIO_EnableIRQ(port, pin, irq, GPIO_GetPinStatus(port, pin), true, 60);
+	GPIO_EnableIRQ(port, pin, irq, GPIO_GetPinStatus(port, pin), KEY_ACTIVE_LOW, 60);
 }
 
 static void app_key1_isr(void)

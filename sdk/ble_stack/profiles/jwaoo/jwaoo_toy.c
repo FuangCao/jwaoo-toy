@@ -903,6 +903,38 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		success = true;
 		break;
 
+	// ================================================================================
+
+	case JWAOO_TOY_CMD_GPIO_GET:
+		if (length == 3) {
+			uint8_t value = GPIO_GetPinStatus((GPIO_PORT) command->gpio.port, (GPIO_PIN) command->gpio.pin);
+			jwaoo_toy_send_response_u8(command->type, value);
+			return;
+		}
+		break;
+
+	case JWAOO_TOY_CMD_GPIO_SET:
+		if (length == 4) {
+			if (command->gpio.value) {
+				GPIO_SetActive((GPIO_PORT) command->gpio.port, (GPIO_PIN) command->gpio.pin);
+			} else {
+				GPIO_SetInactive((GPIO_PORT) command->gpio.port, (GPIO_PIN) command->gpio.pin);
+			}
+
+			success = true;
+		}
+		break;
+
+	case JWAOO_TOY_CMD_GPIO_CFG:
+		if (length == 6) {
+			GPIO_ConfigurePin((GPIO_PORT) command->gpio_config.port, (GPIO_PIN) command->gpio_config.pin,
+				(GPIO_PUPD) command->gpio_config.mode, (GPIO_FUNCTION) command->gpio_config.function, command->gpio_config.high > 0);
+			success = true;
+		}
+		break;
+
+	// ================================================================================
+
 	default:
 		println("Invalid command: %d", command->type);
 		break;

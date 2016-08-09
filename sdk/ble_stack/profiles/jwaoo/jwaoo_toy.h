@@ -46,10 +46,10 @@
 #define JWAOO_TOY_KEY_COUNT				4
 #define JWAOO_TOY_KEY_REPEAT_LONG		100
 #define JWAOO_TOY_KEY_REPEAT_SHORT		5
-#define JWAOO_TOY_KEYCODE_UP			3
-#define JWAOO_TOY_KEYCODE_DOWN			1
-#define JWAOO_TOY_KEYCODE_O				0
-#define JWAOO_TOY_KEYCODE_MAX			2
+#define JWAOO_TOY_KEYCODE_UP			0
+#define JWAOO_TOY_KEYCODE_DOWN			2
+#define JWAOO_TOY_KEYCODE_O				1
+#define JWAOO_TOY_KEYCODE_MAX			3
 
 #define JWAOO_TOY_IDENTIFY				"JwaooToy"
 #define JWAOO_TOY_VERSION				0x20160702
@@ -144,6 +144,9 @@ enum
 	JWAOO_TOY_CMD_KEY_CLICK_ENABLE = 90,
 	JWAOO_TOY_CMD_KEY_LONG_CLICK_ENABLE,
 	JWAOO_TOY_CMD_KEY_MULTI_CLICK_ENABLE,
+	JWAOO_TOY_CMD_GPIO_GET = 100,
+	JWAOO_TOY_CMD_GPIO_SET,
+	JWAOO_TOY_CMD_GPIO_CFG,
 };
 
 enum
@@ -216,6 +219,20 @@ struct jwaoo_toy_command
 			uint8_t level;
 			uint16_t voltage;
 		} battery;
+
+		struct {
+			uint8_t port;
+			uint8_t pin;
+			uint8_t value;
+		} gpio;
+
+		struct {
+			uint8_t port;
+			uint8_t pin;
+			uint8_t mode;
+			uint8_t function;
+			uint8_t high;
+		} gpio_config;
 	};
 };
 
@@ -307,7 +324,6 @@ struct jwaoo_toy_env_tag
 	uint8_t moto_rand_level;
 
 	bool battery_report;
-	bool battery_charging;
 	uint8_t battery_state;
 	uint8_t battery_level;
 	uint16_t battery_voltage;

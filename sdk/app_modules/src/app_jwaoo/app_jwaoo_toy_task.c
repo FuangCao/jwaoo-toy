@@ -134,20 +134,22 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		level = (voltage - BATT_VOLTAGE_MIN) * 100 / (BATT_VOLTAGE_MAX - BATT_VOLTAGE_MIN);
 	}
 
-	jwaoo_toy_env.battery_level = level;
-
-	if (jwaoo_toy_env.battery_charging) {
+	if (CHG_STAT_GPIO_GET == 0) {
 		if (level < 100) {
 			state = JWAOO_TOY_BATTERY_CHARGING;
 		} else {
 			state = JWAOO_TOY_BATTERY_FULL;
 		}
+	} else if (CHG_DET_GPIO_GET) {
+		level = 100;
+		state = JWAOO_TOY_BATTERY_FULL;
 	} else if (level > BATT_LEVEL_LOW) {
 		state = JWAOO_TOY_BATTERY_NORMAL;
 	} else {
 		state = JWAOO_TOY_BATTERY_LOW;
 	}
 
+	jwaoo_toy_env.battery_level = level;
 	jwaoo_toy_set_battery_state(state);
 
 	ke_timer_set(JWAOO_TOY_BATT_REPORT_STATE, TASK_JWAOO_TOY, 1);

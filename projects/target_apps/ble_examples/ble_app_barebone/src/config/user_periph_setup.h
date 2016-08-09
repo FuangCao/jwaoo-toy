@@ -49,10 +49,11 @@
 #define KB(a)				((a) << 10)
 #define PWM_AUTO_ALLOC		0
 #define PWM_LEVEL_MAX		18
+#define MOTO_LEVEL_MIN		5
 #define MOTO_BOOST_LEVEL	PWM_LEVEL_MAX
-#define MOTO_BOOST_TIME		3
-#define BATT_VOLTAGE_MIN	1000
-#define BATT_VOLTAGE_MAX	3000
+#define MOTO_BOOST_TIME		4
+#define BATT_VOLTAGE_MIN	3000
+#define BATT_VOLTAGE_MAX	4200
 #define BATT_LEVEL_LOW		8
 
 #define JWAOO_PWM_BLINK_OPEN(device) \
@@ -88,8 +89,8 @@
 #define LEDB_SET_LEVEL(level)	LED_SET_LEVEL(LEDB, 4, level)
 #endif
 
-#define LED1_GPIO_PORT			GPIO_PORT_1
-#define LED1_GPIO_PIN			GPIO_PIN_0
+#define LED1_GPIO_PORT			GPIO_PORT_0
+#define LED1_GPIO_PIN			GPIO_PIN_7
 #define LED1_RESERVE			RESERVE_GPIO(LED1, LED1_GPIO_PORT, LED1_GPIO_PIN, PID_GPIO)
 #define LED1_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_led1, level)
 #define LED1_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_led1)
@@ -98,8 +99,8 @@
 #define LED1_BLINK_SET(min, max, step, delay, count) \
 	jwaoo_pwm_blink_set(&jwaoo_pwm_led1, min, max, step, delay, count)
 
-#define LED2_GPIO_PORT			GPIO_PORT_1
-#define LED2_GPIO_PIN			GPIO_PIN_1
+#define LED2_GPIO_PORT			GPIO_PORT_2
+#define LED2_GPIO_PIN			GPIO_PIN_9
 #define LED2_RESERVE			RESERVE_GPIO(LED2, LED2_GPIO_PORT, LED2_GPIO_PIN, PID_GPIO)
 #define LED2_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_led2, level)
 #define LED2_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_led2)
@@ -124,21 +125,28 @@
 #define RELAY_CONFIG			GPIO_ConfigurePin(RELAY_GPIO_PORT, RELAY_GPIO_PIN, OUTPUT, PID_GPIO, true)
 #endif
 
+#define KEY_ACTIVE_LOW			0
+
 #define KEY_GPIO_RESERVE(index) \
 	RESERVE_GPIO(KEY##index, KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, PID_GPIO)
 
+#if KEY_ACTIVE_LOW
 #define KEY_GPIO_CONFIG(index) \
 	GPIO_ConfigurePin(KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, INPUT_PULLUP, PID_GPIO, true)
+#else
+#define KEY_GPIO_CONFIG(index) \
+	GPIO_ConfigurePin(KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, INPUT, PID_GPIO, true)
+#endif
 
 #define KEY1_GPIO_PORT			GPIO_PORT_2
-#define KEY1_GPIO_PIN			GPIO_PIN_7
+#define KEY1_GPIO_PIN			GPIO_PIN_1
 #define KEY1_GPIO_IRQ			GPIO0_IRQn
 
-#define KEY2_GPIO_PORT			GPIO_PORT_0
-#define KEY2_GPIO_PIN			GPIO_PIN_7
+#define KEY2_GPIO_PORT			GPIO_PORT_2
+#define KEY2_GPIO_PIN			GPIO_PIN_2
 #define KEY2_GPIO_IRQ			GPIO1_IRQn
 
-#if 0
+#if 1
 #define KEY3_GPIO_PORT			GPIO_PORT_2
 #define KEY3_GPIO_PIN			GPIO_PIN_3
 #define KEY3_GPIO_IRQ			GPIO2_IRQn
@@ -152,6 +160,18 @@
 #define BATT_ADC_GPIO_PIN		GPIO_PIN_1
 #define BATT_ADC_RESERVE		RESERVE_GPIO(BATT_ADC, BATT_ADC_GPIO_PORT, BATT_ADC_GPIO_PIN, PID_ADC)
 #define BATT_ADC_CONFIG 		GPIO_ConfigurePin(BATT_ADC_GPIO_PORT, BATT_ADC_GPIO_PIN, INPUT, PID_ADC, true)
+
+#define CHG_DET_GPIO_PORT
+#define CHG_DET_GPIO_PIN
+#define CHG_DET_RESERVE			// RESERVE_GPIO(CHG_DET, CHG_DET_GPIO_PORT, CHG_DET_GPIO_PIN, PID_GPIO)
+#define CHG_DET_CONFIG 			// GPIO_ConfigurePin(CHG_DET_GPIO_PORT, CHG_DET_GPIO_PIN, INPUT, PID_GPIO, true)
+#define CHG_DET_GPIO_GET		0
+
+#define CHG_STAT_GPIO_PORT		GPIO_PORT_1
+#define CHG_STAT_GPIO_PIN		GPIO_PIN_1
+#define CHG_STAT_RESERVE		RESERVE_GPIO(CHG_STAT, CHG_STAT_GPIO_PORT, CHG_STAT_GPIO_PIN, PID_GPIO)
+#define CHG_STAT_CONFIG 		GPIO_ConfigurePin(CHG_STAT_GPIO_PORT, CHG_STAT_GPIO_PIN, INPUT, PID_GPIO, true)
+#define CHG_STAT_GPIO_GET		GPIO_GetPinStatus(CHG_STAT_GPIO_PORT, CHG_STAT_GPIO_PIN)
 
 /****************************************************************************************/
 /* i2c eeprom configuration                                                             */

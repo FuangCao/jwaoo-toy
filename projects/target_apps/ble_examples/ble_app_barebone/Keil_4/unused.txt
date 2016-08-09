@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Aug 08 17:17:18 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Tue Aug 09 18:10:59 2016
 ;VERSION 0.2
 ;FILE adc.o
 ;FILE app.o
@@ -111,7 +111,6 @@ jwaoo_toy_send_command_u16 <= USED 0
 jwaoo_toy_send_command_u32 <= USED 0
 jwaoo_toy_send_command_u8 <= USED 0
 jwaoo_toy_send_response_u16 <= USED 0
-jwaoo_toy_send_response_u8 <= USED 0
 ;FILE ke_task.obj
 ;FILE llc.obj
 ;FILE mpu6050.o
