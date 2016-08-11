@@ -48,29 +48,19 @@
 
 #define KB(a)				((a) << 10)
 #define PWM_AUTO_ALLOC		0
-#define PWM_LEVEL_MAX		18
-#define MOTO_LEVEL_MIN		5
-#define MOTO_BOOST_LEVEL	PWM_LEVEL_MAX
+#define PWM_LEVEL_MAX		100
+#define MOTO_LEVEL_MIN		28
+#define MOTO_LEVEL_BOOST	PWM_LEVEL_MAX
+#define MOTO_LEVEL_RANGE	(PWM_LEVEL_MAX - MOTO_LEVEL_MIN)
+#define MOTO_STEP_MAX		18
 #define MOTO_BOOST_TIME		4
 #define BATT_VOLTAGE_MIN	3000
 #define BATT_VOLTAGE_MAX	4200
 #define BATT_LEVEL_LOW		8
 
-#define JWAOO_PWM_BLINK_OPEN(device) \
-	jwaoo_pwm_blink_set(device, PWM_LEVEL_MAX, PWM_LEVEL_MAX, 0, 0, 0)
-
-#define JWAOO_PWM_BLINK_CLOSE(device) \
-	jwaoo_pwm_blink_set(device, 0, 0, 0, 0, 0)
-
 #define MOTO_GPIO_PORT			GPIO_PORT_2
 #define MOTO_GPIO_PIN			GPIO_PIN_0
 #define MOTO_RESERVE			RESERVE_GPIO(MOTO, MOTO_GPIO_PORT, MOTO_GPIO_PIN, PID_GPIO)
-#define MOTO_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_moto, level);
-#define MOTO_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_moto)
-#define MOTO_CLOSE				JWAOO_PWM_BLINK_CLOSE(&jwaoo_pwm_moto)
-#define MOTO_BLINK_WALK			jwaoo_pwm_blink_walk(&jwaoo_pwm_moto)
-#define MOTO_BLINK_SET(min, max, step, delay, count) \
-	jwaoo_pwm_blink_set(&jwaoo_pwm_moto, min, max, step, delay, count)
 
 #if 0
 #define LEDR_GPIO_PORT			GPIO_PORT_2
@@ -92,22 +82,10 @@
 #define LED1_GPIO_PORT			GPIO_PORT_0
 #define LED1_GPIO_PIN			GPIO_PIN_7
 #define LED1_RESERVE			RESERVE_GPIO(LED1, LED1_GPIO_PORT, LED1_GPIO_PIN, PID_GPIO)
-#define LED1_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_led1, level)
-#define LED1_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_led1)
-#define LED1_CLOSE				JWAOO_PWM_BLINK_CLOSE(&jwaoo_pwm_led1)
-#define LED1_BLINK_WALK			jwaoo_pwm_blink_walk(&jwaoo_pwm_led1)
-#define LED1_BLINK_SET(min, max, step, delay, count) \
-	jwaoo_pwm_blink_set(&jwaoo_pwm_led1, min, max, step, delay, count)
 
 #define LED2_GPIO_PORT			GPIO_PORT_2
 #define LED2_GPIO_PIN			GPIO_PIN_9
 #define LED2_RESERVE			RESERVE_GPIO(LED2, LED2_GPIO_PORT, LED2_GPIO_PIN, PID_GPIO)
-#define LED2_SET_LEVEL(level)	jwaoo_pwm_set_level(&jwaoo_pwm_led2, level)
-#define LED2_OPEN				JWAOO_PWM_BLINK_OPEN(&jwaoo_pwm_led2)
-#define LED2_CLOSE				JWAOO_PWM_BLINK_CLOSE(&jwaoo_pwm_led2)
-#define LED2_BLINK_WALK			jwaoo_pwm_blink_walk(&jwaoo_pwm_led2)
-#define LED2_BLINK_SET(min, max, step, delay, count) \
-	jwaoo_pwm_blink_set(&jwaoo_pwm_led2, min, max, step, delay, count)
 
 #if 0
 #define BLUZZ_GPIO_PORT			GPIO_PORT_2
@@ -259,15 +237,18 @@ struct jwaoo_pwm_device
 	uint8_t blink_max;
 	uint8_t blink_delay;
 	uint8_t blink_count;
+
+	void (*set_level)(struct jwaoo_pwm_device *device, uint8_t level);
 };
 
 extern struct jwaoo_pwm_device jwaoo_pwm_moto;
 extern struct jwaoo_pwm_device jwaoo_pwm_led1;
 extern struct jwaoo_pwm_device jwaoo_pwm_led2;
 
-bool jwaoo_pwm_set_level(struct jwaoo_pwm_device *device, uint8_t level);
 bool jwaoo_pwm_blink_walk(struct jwaoo_pwm_device *device);
 void jwaoo_pwm_blink_set(struct jwaoo_pwm_device *device, uint8_t min, uint8_t max, uint8_t step, uint8_t delay, uint8_t count);
+void jwaoo_pwm_blink_sawtooth(struct jwaoo_pwm_device *device, uint8_t min, uint8_t max, uint8_t step, uint32_t cycle, uint8_t count);
+void jwaoo_pwm_blink_square(struct jwaoo_pwm_device *device, uint32_t cycle, uint8_t count);
 
 /**
  ****************************************************************************************
@@ -293,5 +274,45 @@ void set_pad_functions(void);
  ****************************************************************************************
  */
 void GPIO_reservations(void);
+
+static inline void jwaoo_pwm_blink_set_level(struct jwaoo_pwm_device *device, uint8_t level)
+{
+	jwaoo_pwm_blink_set(device, level, level, PWM_LEVEL_MAX, 0, 0);
+}
+
+static inline void jwaoo_pwm_blink_open(struct jwaoo_pwm_device *device)
+{
+	jwaoo_pwm_blink_set_level(device, PWM_LEVEL_MAX);
+}
+
+static inline void jwaoo_pwm_blink_close(struct jwaoo_pwm_device *device)
+{
+	jwaoo_pwm_blink_set_level(device, 0);
+}
+
+static inline void jwaoo_moto_blink_sawtooth(uint16_t cycle)
+{
+	jwaoo_pwm_blink_sawtooth(&jwaoo_pwm_moto, 1, MOTO_STEP_MAX, 1, cycle, 0);
+}
+
+static inline void jwaoo_moto_blink_square(uint16_t cycle)
+{
+	jwaoo_pwm_blink_square(&jwaoo_pwm_moto, cycle, 0);
+}
+
+static inline void jwaoo_moto_set_level(uint8_t level)
+{
+	jwaoo_pwm_blink_set(&jwaoo_pwm_moto, level, level, MOTO_STEP_MAX, 0, 0);
+}
+
+static inline void jwaoo_moto_open(void)
+{
+	jwaoo_moto_set_level(MOTO_STEP_MAX);
+}
+
+static inline void jwaoo_moto_close(void)
+{
+	jwaoo_moto_set_level(0);
+}
 
 #endif // _USER_PERIPH_SETUP_H_

@@ -164,10 +164,11 @@ static int jwaoo_toy_key_lock_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const src_id)
 {
 	if (jwaoo_toy_env.key_locked) {
-		LED1_OPEN;
+		jwaoo_pwm_blink_open(&jwaoo_pwm_led1);
 		jwaoo_toy_env.key_locked = false;
 	} else {
-		LED1_CLOSE;
+		jwaoo_toy_env.key_led_locked = false;
+		jwaoo_pwm_blink_close(&jwaoo_pwm_led1);
 		jwaoo_toy_env.key_locked = true;
 	}
 
@@ -181,7 +182,12 @@ static int jwaoo_toy_led1_blink_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	LED1_BLINK_WALK;
+	if (!jwaoo_toy_env.key_led_locked) {
+		if (jwaoo_pwm_blink_walk(&jwaoo_pwm_led1) && jwaoo_toy_env.key_led_blink) {
+			jwaoo_toy_env.key_led_blink = false;
+			jwaoo_toy_update_battery_led_state();
+		}
+	}
 
     return (KE_MSG_CONSUMED);
 }
@@ -191,7 +197,7 @@ static int jwaoo_toy_led2_blink_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	LED2_BLINK_WALK;
+	jwaoo_pwm_blink_walk(&jwaoo_pwm_led2);
 
     return (KE_MSG_CONSUMED);
 }
@@ -201,8 +207,8 @@ static int jwaoo_toy_moto_boost_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	if (jwaoo_toy_env.moto_level > 0) {
-		MOTO_SET_LEVEL(jwaoo_toy_env.moto_level);
+	if (jwaoo_pwm_moto.level > 0) {
+		jwaoo_pwm_moto.set_level(&jwaoo_pwm_moto, jwaoo_pwm_moto.level);
 	}
 
     return (KE_MSG_CONSUMED);
@@ -214,15 +220,14 @@ static int jwaoo_toy_moto_blink_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const src_id)
 {
 	if (jwaoo_toy_env.moto_mode == 6) {
-		MOTO_SET_LEVEL((rand() % PWM_LEVEL_MAX) + 1);
+		jwaoo_moto_set_level((rand() % MOTO_STEP_MAX) + 1);
 		ke_timer_set(msgid, dest_id, (rand() & 0x3F) + 1);
 	} else {
-		MOTO_BLINK_WALK;
+		jwaoo_pwm_blink_walk(&jwaoo_pwm_moto);
 	}
 
     return (KE_MSG_CONSUMED);
 }
-
 
 static const struct ke_msg_handler app_jwaoo_toy_process_handlers[]=
 {

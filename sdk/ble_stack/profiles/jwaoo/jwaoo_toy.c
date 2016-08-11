@@ -347,32 +347,32 @@ bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
 
 	switch (mode) {
 	case 0:
-		MOTO_CLOSE;
+		jwaoo_moto_close();
 		break;
 
 	case 1:
 		jwaoo_toy_env.moto_level_backup = level;
-		MOTO_BLINK_SET(level, level, 0, 0, 0);
+		jwaoo_moto_set_level(level);
 		break;
 
 	case 2:
-		MOTO_BLINK_SET(1, PWM_LEVEL_MAX, 1, 11, 0);
+		jwaoo_moto_blink_sawtooth(4000);
 		break;
 
 	case 3:
-		MOTO_BLINK_SET(1, PWM_LEVEL_MAX, 1, 5, 0);
+		jwaoo_moto_blink_sawtooth(2000);
 		break;
 
 	case 4:
-		MOTO_BLINK_SET(0, PWM_LEVEL_MAX, PWM_LEVEL_MAX, 100, 0);
+		jwaoo_moto_blink_square(4000);
 		break;
 
 	case 5:
-		MOTO_BLINK_SET(0, PWM_LEVEL_MAX, PWM_LEVEL_MAX, 50, 0);
+		jwaoo_moto_blink_square(2000);
 		break;
 
 	case 6:
-		MOTO_OPEN;
+		jwaoo_moto_open();
 		break;
 
 	default:
@@ -978,31 +978,35 @@ bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length)
 	return false;
 }
 
-void jwaoo_toy_set_battery_state(uint8_t state)
+void jwaoo_toy_update_battery_led_state(void)
 {
-	println("battery_state = %d", state);
-
-	if (jwaoo_toy_env.battery_state == state) {
+	if (jwaoo_toy_env.key_led_locked || jwaoo_toy_env.key_led_blink) {
 		return;
 	}
 
-	jwaoo_toy_env.battery_state = state;
-
-	switch (state) {
+	switch (jwaoo_toy_env.battery_state) {
 	case JWAOO_TOY_BATTERY_LOW:
-		LED1_BLINK_SET(0, PWM_LEVEL_MAX, PWM_LEVEL_MAX, 50, 0);
+		jwaoo_pwm_blink_square(&jwaoo_pwm_led1, 500, 0);
 		break;
 
 	case JWAOO_TOY_BATTERY_FULL:
-		LED1_OPEN;
+		jwaoo_pwm_blink_open(&jwaoo_pwm_led1);
 		break;
 
 	case JWAOO_TOY_BATTERY_CHARGING:
-		LED1_BLINK_SET(0, PWM_LEVEL_MAX, 1, 11, 0);
+		jwaoo_pwm_blink_sawtooth(&jwaoo_pwm_led1, 0, PWM_LEVEL_MAX, PWM_LEVEL_MAX / 10, 2000, 0);
 		break;
 
 	default:
-		LED1_CLOSE;
+		jwaoo_pwm_blink_close(&jwaoo_pwm_led1);
+	}
+}
+
+void jwaoo_toy_set_battery_state(uint8_t state)
+{
+	if (jwaoo_toy_env.battery_state != state) {
+		jwaoo_toy_env.battery_state = state;
+		jwaoo_toy_update_battery_led_state();
 	}
 }
 
@@ -1041,8 +1045,8 @@ static uint8_t jwaoo_toy_moto_level_add(void)
 {
 	uint8_t value = jwaoo_pwm_moto.level + 1;
 
-	if (value > PWM_LEVEL_MAX) {
-		value = PWM_LEVEL_MAX;
+	if (value > MOTO_STEP_MAX) {
+		value = MOTO_STEP_MAX;
 	}
 
 	jwaoo_toy_moto_set_mode(1, value);
@@ -1162,7 +1166,8 @@ bool jwaoo_toy_process_key_lock(void)
 			if (jwaoo_toy_env.key_lock_pending) {
 				ke_timer_clear(JWAOO_TOY_KEY_LOCK, TASK_APP);
 				jwaoo_toy_env.key_lock_pending = false;
-				LED1_CLOSE;
+				jwaoo_toy_env.key_led_locked = false;
+				jwaoo_pwm_blink_close(&jwaoo_pwm_led1);
 			}
 
 			return false;
@@ -1188,7 +1193,8 @@ bool jwaoo_toy_process_key_lock(void)
 	ke_timer_set(JWAOO_TOY_KEY_LOCK, TASK_APP, 300);
 
 	if (!jwaoo_toy_env.key_locked) {
-		LED1_OPEN;
+		jwaoo_toy_env.key_led_locked = true;
+		jwaoo_pwm_blink_open(&jwaoo_pwm_led1);
 	}
 
 	return true;
@@ -1227,9 +1233,8 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 	}
 
 	if (value > 0) {
-		if (jwaoo_toy_env.battery_state == JWAOO_TOY_BATTERY_NORMAL) {
-			LED1_BLINK_SET(0, PWM_LEVEL_MAX, PWM_LEVEL_MAX, 5, 2);
-		}
+		jwaoo_toy_env.key_led_blink = true;
+		jwaoo_pwm_blink_square(&jwaoo_pwm_led1, 200, 2);
 
 		key->count++;
 		key->repeat = 0;

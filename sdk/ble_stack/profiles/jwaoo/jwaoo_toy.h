@@ -309,6 +309,8 @@ struct jwaoo_toy_env_tag
 	uint8_t sensor_capacity_dead;
 	uint16_t sensor_poll_delay;
 
+	bool key_led_locked;
+	bool key_led_blink;
 	bool key_locked;
 	bool key_lock_pending;
 	bool key_click_enable;
@@ -318,7 +320,6 @@ struct jwaoo_toy_env_tag
 	uint16_t key_multi_click_delay;
 
 	uint8_t moto_mode;
-	uint8_t moto_level;
 	uint8_t moto_level_backup;
 	uint8_t moto_rand_delay;
 	uint8_t moto_rand_level;
@@ -372,6 +373,7 @@ void jwaoo_toy_disable(uint16_t conhdl);
 uint8_t jwaoo_toy_sensor_poll(void);
 bool jwaoo_toy_sensor_set_enable(bool enable);
 bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw);
+void jwaoo_toy_update_battery_led_state(void);
 void jwaoo_toy_set_battery_state(uint8_t state);
 void jwaoo_toy_moto_set_level(uint8_t level);
 
