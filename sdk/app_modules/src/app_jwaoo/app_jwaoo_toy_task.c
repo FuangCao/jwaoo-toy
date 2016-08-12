@@ -140,9 +140,11 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		} else {
 			state = JWAOO_TOY_BATTERY_FULL;
 		}
+#ifdef CHG_DET_GPIO_GET
 	} else if (CHG_DET_GPIO_GET) {
 		level = 100;
 		state = JWAOO_TOY_BATTERY_FULL;
+#endif
 	} else if (level > BATT_LEVEL_LOW) {
 		state = JWAOO_TOY_BATTERY_NORMAL;
 	} else {
@@ -150,7 +152,7 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 	}
 
 	jwaoo_toy_env.battery_level = level;
-	jwaoo_toy_set_battery_state(state);
+	jwaoo_toy_battery_set_state(state);
 
 	ke_timer_set(JWAOO_TOY_BATT_REPORT_STATE, TASK_JWAOO_TOY, 1);
 	ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
@@ -164,11 +166,10 @@ static int jwaoo_toy_key_lock_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const src_id)
 {
 	if (jwaoo_toy_env.key_locked) {
-		jwaoo_pwm_blink_open(&jwaoo_pwm_led1);
+		jwaoo_led_open(&jwaoo_pwm_led1);
 		jwaoo_toy_env.key_locked = false;
 	} else {
-		jwaoo_toy_env.key_led_locked = false;
-		jwaoo_pwm_blink_close(&jwaoo_pwm_led1);
+		jwaoo_toy_battery_led_release();
 		jwaoo_toy_env.key_locked = true;
 	}
 
@@ -182,10 +183,9 @@ static int jwaoo_toy_led1_blink_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
-	if (!jwaoo_toy_env.key_led_locked) {
-		if (jwaoo_pwm_blink_walk(&jwaoo_pwm_led1) && jwaoo_toy_env.key_led_blink) {
-			jwaoo_toy_env.key_led_blink = false;
-			jwaoo_toy_update_battery_led_state();
+	if (jwaoo_toy_env.battery_led_locked < 2) {
+		if (jwaoo_pwm_blink_walk(&jwaoo_pwm_led1) && jwaoo_toy_env.battery_led_locked > 0) {
+			jwaoo_toy_battery_led_release();
 		}
 	}
 
@@ -220,7 +220,7 @@ static int jwaoo_toy_moto_blink_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const src_id)
 {
 	if (jwaoo_toy_env.moto_mode == 6) {
-		jwaoo_moto_set_level((rand() % MOTO_STEP_MAX) + 1);
+		jwaoo_moto_set_speed((rand() % MOTO_SPEED_MAX) + 1);
 		ke_timer_set(msgid, dest_id, (rand() & 0x3F) + 1);
 	} else {
 		jwaoo_pwm_blink_walk(&jwaoo_pwm_moto);

@@ -339,11 +339,9 @@ bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8
 	return true;
 }
 
-bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
+bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t speed)
 {
 	// println("Moto: mode = %d, level = %d", mode, level);
-
-	jwaoo_toy_env.moto_rand_delay = 0;
 
 	switch (mode) {
 	case 0:
@@ -351,8 +349,7 @@ bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
 		break;
 
 	case 1:
-		jwaoo_toy_env.moto_level_backup = level;
-		jwaoo_moto_set_level(level);
+		jwaoo_moto_set_speed(speed);
 		break;
 
 	case 2:
@@ -372,7 +369,8 @@ bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t level)
 		break;
 
 	case 6:
-		jwaoo_moto_open();
+		ke_timer_clear(JWAOO_TOY_MOTO_BLINK, TASK_APP);
+		ke_timer_set(JWAOO_TOY_MOTO_BLINK, TASK_APP, 1);
 		break;
 
 	default:
@@ -978,35 +976,49 @@ bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length)
 	return false;
 }
 
-void jwaoo_toy_update_battery_led_state(void)
+void jwaoo_toy_battery_led_notify(void)
 {
-	if (jwaoo_toy_env.key_led_locked || jwaoo_toy_env.key_led_blink) {
+	if (jwaoo_toy_env.battery_led_locked < 2) {
+		jwaoo_toy_env.battery_led_locked = 1;
+		jwaoo_led_blink_square(&jwaoo_pwm_led1, 50, 2);
+	}
+}
+
+void jwaoo_toy_battery_led_release(void)
+{
+	jwaoo_toy_env.battery_led_locked = 0;
+	jwaoo_toy_battery_led_update_state();
+}
+
+void jwaoo_toy_battery_led_update_state(void)
+{
+	if (jwaoo_toy_env.battery_led_locked) {
 		return;
 	}
 
 	switch (jwaoo_toy_env.battery_state) {
 	case JWAOO_TOY_BATTERY_LOW:
-		jwaoo_pwm_blink_square(&jwaoo_pwm_led1, 500, 0);
+		jwaoo_led_blink_square(&jwaoo_pwm_led1, 500, 0);
 		break;
 
 	case JWAOO_TOY_BATTERY_FULL:
-		jwaoo_pwm_blink_open(&jwaoo_pwm_led1);
+		jwaoo_led_open(&jwaoo_pwm_led1);
 		break;
 
 	case JWAOO_TOY_BATTERY_CHARGING:
-		jwaoo_pwm_blink_sawtooth(&jwaoo_pwm_led1, 0, PWM_LEVEL_MAX, PWM_LEVEL_MAX / 10, 2000, 0);
+		jwaoo_led_blink_sawtooth(&jwaoo_pwm_led1, 2000, 0);
 		break;
 
 	default:
-		jwaoo_pwm_blink_close(&jwaoo_pwm_led1);
+		jwaoo_led_close(&jwaoo_pwm_led1);
 	}
 }
 
-void jwaoo_toy_set_battery_state(uint8_t state)
+void jwaoo_toy_battery_set_state(uint8_t state)
 {
 	if (jwaoo_toy_env.battery_state != state) {
 		jwaoo_toy_env.battery_state = state;
-		jwaoo_toy_update_battery_led_state();
+		jwaoo_toy_battery_led_update_state();
 	}
 }
 
@@ -1041,44 +1053,44 @@ static void jwaoo_toy_report_key_long_click(struct jwaoo_toy_key *key)
 	ke_msg_send(msg);
 }
 
-static uint8_t jwaoo_toy_moto_level_add(void)
+static uint8_t jwaoo_toy_moto_speed_add(void)
 {
-	uint8_t value = jwaoo_pwm_moto.level + 1;
+	uint8_t speed = jwaoo_pwm_moto.level + 1;
 
-	if (value > MOTO_STEP_MAX) {
-		value = MOTO_STEP_MAX;
+	if (speed > MOTO_SPEED_MAX) {
+		speed = MOTO_SPEED_MAX;
 	}
 
-	jwaoo_toy_moto_set_mode(1, value);
+	jwaoo_toy_moto_set_mode(1, speed);
 
-	return value;
+	return speed;
 }
 
-static uint8_t jwaoo_toy_moto_level_sub(void)
+static uint8_t jwaoo_toy_moto_speed_sub(void)
 {
-	uint8_t value;
+	uint8_t speed;
 
 	if (jwaoo_pwm_moto.level > 1) {
-		value = jwaoo_pwm_moto.level - 1;
+		speed = jwaoo_pwm_moto.level - 1;
 	} else {
-		value = 0;
+		speed = 0;
 	}
 
-	jwaoo_toy_moto_set_mode(1, value);
+	jwaoo_toy_moto_set_mode(1, speed);
 
-	return value;
+	return speed;
 }
 
 static uint8_t jwaoo_toy_moto_mode_add(void)
 {
-	uint8_t value = jwaoo_toy_env.moto_mode + 1;
-	if (value > JWAOO_TOY_MOTO_MODE_MAX) {
-		value = 1;
+	uint8_t mode = jwaoo_toy_env.moto_mode + 1;
+	if (mode > JWAOO_TOY_MOTO_MODE_MAX) {
+		mode = 1;
 	}
 
-	jwaoo_toy_moto_set_mode(value, jwaoo_toy_env.moto_level_backup);
+	jwaoo_toy_moto_set_mode(mode, 0);
 
-	return value;
+	return mode;
 }
 
 static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
@@ -1089,13 +1101,15 @@ static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 		return;
 	}
 
+	jwaoo_toy_battery_led_notify();
+
 	switch (key->code) {
 	case JWAOO_TOY_KEYCODE_UP:
-		jwaoo_toy_moto_level_add();
+		jwaoo_toy_moto_speed_add();
 		break;
 
 	case JWAOO_TOY_KEYCODE_DOWN:
-		if (jwaoo_toy_moto_level_sub() == 0 && key->repeat) {
+		if (jwaoo_toy_moto_speed_sub() == 0 && key->repeat) {
 			println("need shoutdown");
 		}
 		break;
@@ -1166,8 +1180,7 @@ bool jwaoo_toy_process_key_lock(void)
 			if (jwaoo_toy_env.key_lock_pending) {
 				ke_timer_clear(JWAOO_TOY_KEY_LOCK, TASK_APP);
 				jwaoo_toy_env.key_lock_pending = false;
-				jwaoo_toy_env.key_led_locked = false;
-				jwaoo_pwm_blink_close(&jwaoo_pwm_led1);
+				jwaoo_toy_battery_led_release();
 			}
 
 			return false;
@@ -1193,8 +1206,8 @@ bool jwaoo_toy_process_key_lock(void)
 	ke_timer_set(JWAOO_TOY_KEY_LOCK, TASK_APP, 300);
 
 	if (!jwaoo_toy_env.key_locked) {
-		jwaoo_toy_env.key_led_locked = true;
-		jwaoo_pwm_blink_open(&jwaoo_pwm_led1);
+		jwaoo_toy_env.battery_led_locked = 2;
+		jwaoo_led_open(&jwaoo_pwm_led1);
 	}
 
 	return true;
@@ -1233,9 +1246,6 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 	}
 
 	if (value > 0) {
-		jwaoo_toy_env.key_led_blink = true;
-		jwaoo_pwm_blink_square(&jwaoo_pwm_led1, 200, 2);
-
 		key->count++;
 		key->repeat = 0;
 		ke_timer_set(key->repeat_timer, TASK_APP, JWAOO_TOY_KEY_REPEAT_LONG);

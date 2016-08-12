@@ -68,11 +68,11 @@ struct mnf_specific_data_ad_structure mnf_data __attribute__((section("retention
 static void user_app_set_blink_enable(bool enable, bool connected)
 {
 	if (connected) {
-		jwaoo_pwm_blink_open(&jwaoo_pwm_led2);
+		jwaoo_led_open(&jwaoo_pwm_led2);
 	} else if (enable) {
-		jwaoo_pwm_blink_square(&jwaoo_pwm_led2, 1000, 0);
+		jwaoo_led_blink_square(&jwaoo_pwm_led2, 1000, 0);
 	} else {
-		jwaoo_pwm_blink_close(&jwaoo_pwm_led2);
+		jwaoo_led_close(&jwaoo_pwm_led2);
 	}
 }
 

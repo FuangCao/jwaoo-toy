@@ -93,9 +93,9 @@ static void jwaoo_moto_set_level_handler(struct jwaoo_pwm_device *device, uint8_
 	if (level > 0 && device->level == 0) {
 		pwm_level = MOTO_LEVEL_BOOST;
 		ke_timer_set(JWAOO_TOY_MOTO_BOOST, TASK_APP, MOTO_BOOST_TIME);
-	} else if (level < MOTO_STEP_MAX) {
+	} else if (level < MOTO_SPEED_MAX) {
 		if (level > 0) {
-			pwm_level = level * MOTO_LEVEL_RANGE / MOTO_STEP_MAX + MOTO_LEVEL_MIN;
+			pwm_level = level * MOTO_LEVEL_RANGE / MOTO_SPEED_MAX + MOTO_LEVEL_MIN;
 		} else {
 			pwm_level = 0;
 		}
@@ -188,8 +188,10 @@ bool jwaoo_pwm_blink_walk(struct jwaoo_pwm_device *device)
 void jwaoo_pwm_blink_set(struct jwaoo_pwm_device *device, uint8_t min, uint8_t max, uint8_t step, uint8_t delay, uint8_t count)
 {
 	ke_timer_clear(device->blink_timer, TASK_APP);
+	device->set_level(device, min);
 
-	if (min < max) {
+	if (min < max && step > 0) {
+		device->blink_add = true;
 		device->blink_min = min;
 		device->blink_max = max;
 		device->blink_step = step;
@@ -197,21 +199,27 @@ void jwaoo_pwm_blink_set(struct jwaoo_pwm_device *device, uint8_t min, uint8_t m
 		device->blink_count = count;
 
 		ke_timer_set(device->blink_timer, TASK_APP, 1);
-	} else {
-		device->set_level(device, min);
 	}
 }
 
 void jwaoo_pwm_blink_sawtooth(struct jwaoo_pwm_device *device, uint8_t min, uint8_t max, uint8_t step, uint32_t cycle, uint8_t count)
 {
 	uint8_t delay = cycle * step / (max - min) / 20;
+	if (delay < 1) {
+		delay = 1;
+	}
+
 	jwaoo_pwm_blink_set(device, min, max, step, delay, count);
 }
 
-void jwaoo_pwm_blink_square(struct jwaoo_pwm_device *device, uint32_t cycle, uint8_t count)
+void jwaoo_pwm_blink_square(struct jwaoo_pwm_device *device, uint8_t min, uint8_t max, uint32_t cycle, uint8_t count)
 {
 	uint8_t delay = cycle / 20;
-	jwaoo_pwm_blink_set(device, 0, PWM_LEVEL_MAX, PWM_LEVEL_MAX, delay, count);
+	if (delay < 1) {
+		delay = 1;
+	}
+
+	jwaoo_pwm_blink_set(device, min, max, max - min, delay, count);
 }
 
 #if DEVELOPMENT_DEBUG
