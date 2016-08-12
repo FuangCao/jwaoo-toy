@@ -345,11 +345,11 @@ bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t speed)
 
 	switch (mode) {
 	case 0:
-		jwaoo_moto_close();
+		jwaoo_moto_set_speed(speed);
 		break;
 
 	case 1:
-		jwaoo_moto_set_speed(speed);
+		jwaoo_moto_set_speed(10);
 		break;
 
 	case 2:
@@ -1061,7 +1061,7 @@ static uint8_t jwaoo_toy_moto_speed_add(void)
 		speed = MOTO_SPEED_MAX;
 	}
 
-	jwaoo_toy_moto_set_mode(1, speed);
+	jwaoo_toy_moto_set_mode(0, speed);
 
 	return speed;
 }
@@ -1076,7 +1076,7 @@ static uint8_t jwaoo_toy_moto_speed_sub(void)
 		speed = 0;
 	}
 
-	jwaoo_toy_moto_set_mode(1, speed);
+	jwaoo_toy_moto_set_mode(0, speed);
 
 	return speed;
 }
