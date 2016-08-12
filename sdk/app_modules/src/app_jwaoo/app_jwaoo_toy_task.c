@@ -169,7 +169,7 @@ static int jwaoo_toy_key_lock_handler(ke_msg_id_t const msgid,
 		jwaoo_led_open(&jwaoo_pwm_led1);
 		jwaoo_toy_env.key_locked = false;
 	} else {
-		jwaoo_toy_battery_led_release();
+		jwaoo_led_close(&jwaoo_pwm_led1);
 		jwaoo_toy_env.key_locked = true;
 	}
 

@@ -1203,12 +1203,15 @@ bool jwaoo_toy_process_key_lock(void)
 		}
 	}
 
-	ke_timer_set(JWAOO_TOY_KEY_LOCK, TASK_APP, 300);
+	jwaoo_toy_env.battery_led_locked = 2;
 
-	if (!jwaoo_toy_env.key_locked) {
-		jwaoo_toy_env.battery_led_locked = 2;
+	if (jwaoo_toy_env.key_locked) {
+		jwaoo_led_close(&jwaoo_pwm_led1);
+	} else {
 		jwaoo_led_open(&jwaoo_pwm_led1);
 	}
+
+	ke_timer_set(JWAOO_TOY_KEY_LOCK, TASK_APP, 300);
 
 	return true;
 }
