@@ -25,6 +25,7 @@
 #include "rwip_config.h"
 
 #if (BLE_JWAOO_TOY_SERVER)
+#include "app.h"
 #include "pwm.h"
 #include "uart.h"
 #include "stdarg.h"
@@ -39,6 +40,7 @@
 #include "bmi160.h"
 #include "mpu6050.h"
 #include "fdc1004.h"
+#include "user_barebone.h"
 
 /*
  * MACROS
@@ -976,7 +978,7 @@ bool jwaoo_toy_process_flash_data(const uint8_t *data, uint16_t length)
 	return false;
 }
 
-void jwaoo_toy_battery_led_notify(void)
+void jwaoo_toy_battery_led_blink(void)
 {
 	if (jwaoo_toy_env.battery_led_locked < 2) {
 		jwaoo_toy_env.battery_led_locked = 1;
@@ -1101,7 +1103,9 @@ static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 		return;
 	}
 
-	jwaoo_toy_battery_led_notify();
+	if (key->repeat > 0) {
+		jwaoo_toy_battery_led_blink();
+	}
 
 	switch (key->code) {
 	case JWAOO_TOY_KEYCODE_UP:
@@ -1109,8 +1113,8 @@ static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 		break;
 
 	case JWAOO_TOY_KEYCODE_DOWN:
-		if (jwaoo_toy_moto_speed_sub() == 0 && key->repeat) {
-			println("need shoutdown");
+		if (jwaoo_toy_moto_speed_sub() == 0 && key->repeat > 0) {
+			user_app_set_suspend(true, true);
 		}
 		break;
 
@@ -1228,6 +1232,17 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 
 	// println("%d. code = %d, value = %d", index, key->code, value);
 
+	if (app_suspended) {
+		if (key->code == JWAOO_TOY_KEYCODE_UP) {
+			key->skip = 1;
+			user_app_set_suspend(false, true);
+		}
+
+		return;
+	}
+
+	user_app_update_suspend_timer();
+
 	if (jwaoo_toy_process_key_lock()) {
 		return;
 	}
@@ -1249,6 +1264,8 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 	}
 
 	if (value > 0) {
+		jwaoo_toy_battery_led_blink();
+
 		key->count++;
 		key->repeat = 0;
 		ke_timer_set(key->repeat_timer, TASK_APP, JWAOO_TOY_KEY_REPEAT_LONG);

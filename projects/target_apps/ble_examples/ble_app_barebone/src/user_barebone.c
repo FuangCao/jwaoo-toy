@@ -53,8 +53,9 @@ struct mnf_specific_data_ad_structure
  ****************************************************************************************
  */
 
+uint16_t app_suspend_remain;
 uint8_t app_connection_idx;
-ke_msg_id_t app_adv_data_update_timer_used;
+ke_msg_id_t app_suspend_timer_used;
 ke_msg_id_t app_param_update_request_timer_used;
 
 // Manufacturer Specific Data
@@ -65,7 +66,7 @@ struct mnf_specific_data_ad_structure mnf_data __attribute__((section("retention
  ****************************************************************************************
 */
 
-static void user_app_set_blink_enable(bool enable, bool connected)
+static void jwaoo_app_set_blink_enable(bool enable, bool connected)
 {
 	if (connected) {
 		jwaoo_led_open(&jwaoo_pwm_led2);
@@ -74,6 +75,58 @@ static void user_app_set_blink_enable(bool enable, bool connected)
 	} else {
 		jwaoo_led_close(&jwaoo_pwm_led2);
 	}
+}
+
+static void user_app_suspend_timer_cb()
+{
+	if (app_suspend_remain > 0) {
+		app_suspend_timer_used = app_easy_timer(100, user_app_suspend_timer_cb);
+		app_suspend_remain--;
+	} else {
+		app_suspend_timer_used = EASY_TIMER_INVALID_TIMER;
+		user_app_set_suspend(true, false);
+	}
+}
+
+void user_app_update_suspend_timer(void)
+{
+	app_suspend_remain = APP_SUSPEND_OVER_TIME_SECOND;
+
+	if (app_suspend_timer_used == EASY_TIMER_INVALID_TIMER) {
+		user_app_suspend_timer_cb();
+	}
+}
+
+bool user_app_set_suspend(bool enable, bool force)
+{
+	if (app_suspended == enable) {
+		return true;
+	}
+
+	app_suspended = enable;
+
+	if (enable) {
+		if (ke_state_get(TASK_APP) == APP_CONNECTED) {
+			if (force) {
+				app_easy_gap_disconnect(app_connection_idx);
+			} else {
+				app_suspended = false;
+				return false;
+			}
+		}
+
+		jwaoo_app_set_blink_enable(false, false);
+		app_easy_gap_advertise_stop();
+
+		if (app_suspend_timer_used != EASY_TIMER_INVALID_TIMER) {
+			app_easy_timer_cancel(app_suspend_timer_used);
+			app_suspend_timer_used = EASY_TIMER_INVALID_TIMER;
+		}
+	} else {
+		user_app_adv_start();
+	}
+
+	return true;
 }
 
 /**
@@ -115,27 +168,13 @@ static void mnf_data_update()
 
 /**
  ****************************************************************************************
- * @brief Advertisement data update timer callback function.
- * @return void
- ****************************************************************************************
-*/
-static void adv_data_update_timer_cb()
-{
-    app_adv_data_update_timer_used = 0xFFFF;
-
-	user_app_set_blink_enable(false, false);
-    app_easy_gap_advertise_stop();
-}
-
-/**
- ****************************************************************************************
  * @brief Parameter update request timer callback function.
  * @return void
  ****************************************************************************************
 */
 static void param_update_request_timer_cb()
 {
-    app_param_update_request_timer_used = 0xFFFF;
+    app_param_update_request_timer_used = EASY_TIMER_INVALID_TIMER;
 
     app_easy_gap_param_update_start(app_connection_idx);
 }
@@ -182,14 +221,18 @@ static void app_add_ad_struct(struct gapm_start_advertise_cmd *cmd, void *ad_str
 
 void user_app_adv_start(void)
 {
+	if (app_suspended) {
+		return;
+	}
+
 	if (!ke_timer_active(JWAOO_TOY_BATT_POLL, TASK_APP)) {
 		ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 1);
 	}
 
-	user_app_set_blink_enable(true, false);
+	jwaoo_app_set_blink_enable(true, false);
 
     // Schedule the next advertising data update
-    app_adv_data_update_timer_used = app_easy_timer(APP_ADV_DATA_UPDATE_TO, adv_data_update_timer_cb);
+    user_app_update_suspend_timer();
 
     struct gapm_start_advertise_cmd* cmd;
     cmd = app_easy_gap_undirected_advertise_get_active();
@@ -205,12 +248,13 @@ void user_app_connection(uint8_t connection_idx, struct gapc_connection_req_ind 
 {
     if (app_env[connection_idx].conidx != GAP_INVALID_CONIDX)
     {
-		user_app_set_blink_enable(false, true);
+		jwaoo_app_set_blink_enable(false, true);
 
         app_connection_idx = connection_idx;
 
         // Stop the advertising data update timer
-        app_easy_timer_cancel(app_adv_data_update_timer_used);
+        app_easy_timer_cancel(app_suspend_timer_used);
+		app_suspend_timer_used = EASY_TIMER_INVALID_TIMER;
 
         // Check if the parameters of the established connection are the preferred ones.
         // If not then schedule a connection parameter update request.
@@ -245,7 +289,7 @@ void user_app_disconnect(struct gapc_disconnect_ind const *param)
 {
      uint8_t state = ke_state_get(TASK_APP);
 
-	 user_app_set_blink_enable(false, false);
+	 jwaoo_app_set_blink_enable(false, false);
 
     if ((state == APP_SECURITY) ||
         (state == APP_CONNECTED) ||

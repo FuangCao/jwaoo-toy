@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Aug 12 19:48:03 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Aug 15 20:15:08 2016
 ;VERSION 0.2
 ;FILE adc.o
 ;FILE app.o
@@ -8,7 +8,6 @@ app_easy_gap_advertise_with_timeout_stop <= USED 0
 app_easy_gap_dev_config_get_active <= USED 0
 app_easy_gap_directed_advertise_get_active <= USED 0
 app_easy_gap_directed_advertise_start <= USED 0
-app_easy_gap_disconnect <= USED 0
 app_easy_gap_non_connectable_advertise_get_active <= USED 0
 app_easy_gap_non_connectable_advertise_start <= USED 0
 app_easy_gap_param_update_get_active <= USED 0

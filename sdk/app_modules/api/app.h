@@ -163,6 +163,8 @@ struct app_env_tag
  ****************************************************************************************
  */
 
+extern bool app_suspended;
+
 /// Application environment
 extern struct app_env_tag app_env[APP_EASY_MAX_ACTIVE_CONNECTION];
 

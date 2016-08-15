@@ -369,7 +369,7 @@ void jwaoo_toy_disable(uint16_t conhdl);
 uint8_t jwaoo_toy_sensor_poll(void);
 bool jwaoo_toy_sensor_set_enable(bool enable);
 bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw);
-void jwaoo_toy_battery_led_notify(void);
+void jwaoo_toy_battery_led_blink(void);
 void jwaoo_toy_battery_led_release(void);
 void jwaoo_toy_battery_led_update_state(void);
 void jwaoo_toy_battery_set_state(uint8_t state);

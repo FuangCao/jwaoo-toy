@@ -56,7 +56,7 @@
 #define APP_PARAM_UPDATE_REQUEST_TO         (1000)   // 500*10ms = 5sec, The maximum allowed value is 30000 = 300 sec
 
 /* Advertising data update timer */
-#define APP_ADV_DATA_UPDATE_TO              (1000)  // 1000*10ms = 10sec
+#define APP_SUSPEND_OVER_TIME_SECOND        (600)
 
 /* Manufacturer specific data constants */
 #define APP_AD_MSD_COMPANY_ID       (0xABCD)
@@ -72,6 +72,9 @@
  * FUNCTION DECLARATIONS
  ****************************************************************************************
  */
+
+bool user_app_set_suspend(bool enable, bool force);
+void user_app_update_suspend_timer(void);
 
 /**
  ****************************************************************************************

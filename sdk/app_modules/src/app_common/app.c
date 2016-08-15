@@ -62,6 +62,8 @@
  ****************************************************************************************
  */
 
+bool app_suspended;
+
 /// Application Environment Structure
 struct app_env_tag app_env[APP_EASY_MAX_ACTIVE_CONNECTION] __attribute__((section("retention_mem_area0"),zero_init)); //@RETENTION MEMORY
 

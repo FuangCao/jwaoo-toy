@@ -113,7 +113,7 @@
 	GPIO_ConfigurePin(KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, INPUT_PULLUP, PID_GPIO, true)
 #else
 #define KEY_GPIO_CONFIG(index) \
-	GPIO_ConfigurePin(KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, INPUT, PID_GPIO, true)
+	GPIO_ConfigurePin(KEY##index##_GPIO_PORT, KEY##index##_GPIO_PIN, INPUT_PULLDOWN, PID_GPIO, true)
 #endif
 
 #define KEY1_GPIO_PORT			GPIO_PORT_2
