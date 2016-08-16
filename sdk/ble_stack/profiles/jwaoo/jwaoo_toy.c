@@ -1000,7 +1000,11 @@ void jwaoo_toy_battery_led_update_state(void)
 
 	switch (jwaoo_toy_env.battery_state) {
 	case JWAOO_TOY_BATTERY_LOW:
-		jwaoo_led_blink_square(&jwaoo_pwm_led1, 500, 0);
+		if (app_suspended) {
+			jwaoo_led_close(&jwaoo_pwm_led1);
+		} else {
+			jwaoo_led_blink_square(&jwaoo_pwm_led1, 500, 0);
+		}
 		break;
 
 	case JWAOO_TOY_BATTERY_FULL:

@@ -126,6 +126,8 @@ bool user_app_set_suspend(bool enable, bool force)
 		user_app_adv_start();
 	}
 
+	jwaoo_toy_battery_led_update_state();
+
 	return true;
 }
 

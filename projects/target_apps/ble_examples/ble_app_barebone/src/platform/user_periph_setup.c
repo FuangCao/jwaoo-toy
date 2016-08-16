@@ -41,10 +41,6 @@ static bool jwaoo_pwm_set_level_base(struct jwaoo_pwm_device *device, uint8_t le
 	static uint8_t busy_mask;
 #endif
 
-	if (app_suspended) {
-		level = 0;
-	}
-
 	if (device->active_low) {
 		level = PWM_LEVEL_MAX - level;
 	}
@@ -168,35 +164,29 @@ static bool jwaoo_pwm_set_blink_direction(struct jwaoo_pwm_device *device, bool 
 bool jwaoo_pwm_blink_walk(struct jwaoo_pwm_device *device)
 {
 	uint8_t level;
-	bool complete;
+	bool complete = (device->blink_delay == 0);
 
-	if (app_suspended) {
-		level = 0;
-		complete = true;
+	if (complete) {
+		level = device->blink_min;
 	} else {
-		complete = (device->blink_delay == 0);
+		if (device->blink_add) {
+			level = device->level + device->blink_step;
+			if (level > device->blink_max) {
+				level = device->blink_max - device->blink_step;
+				complete = jwaoo_pwm_set_blink_direction(device, false);
+			}
+		} else {
+			level = device->level - device->blink_step;
+			if (level < device->blink_min || level > device->blink_max) {
+				level = device->blink_min + device->blink_step;
+				complete = jwaoo_pwm_set_blink_direction(device, true);
+			}
+		}
+
 		if (complete) {
 			level = device->blink_min;
 		} else {
-			if (device->blink_add) {
-				level = device->level + device->blink_step;
-				if (level > device->blink_max) {
-					level = device->blink_max - device->blink_step;
-					complete = jwaoo_pwm_set_blink_direction(device, false);
-				}
-			} else {
-				level = device->level - device->blink_step;
-				if (level < device->blink_min || level > device->blink_max) {
-					level = device->blink_min + device->blink_step;
-					complete = jwaoo_pwm_set_blink_direction(device, true);
-				}
-			}
-
-			if (complete) {
-				level = device->blink_min;
-			} else {
-				ke_timer_set(device->blink_timer, TASK_APP, device->blink_delay);
-			}
+			ke_timer_set(device->blink_timer, TASK_APP, device->blink_delay);
 		}
 	}
 

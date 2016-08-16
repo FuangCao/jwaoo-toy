@@ -59,6 +59,10 @@ static int jwaoo_toy_key_repeat_timer(ke_msg_id_t const msgid,
                                          ke_task_id_t const src_id) {
 	struct jwaoo_toy_key *key;
 
+	if (app_suspended) {
+		return KE_MSG_CONSUMED;
+	}
+
 	key = jwaoo_toy_key_get(msgid, JWAOO_TOY_KEY1_REPEAT_TIMER);
 	if (key->value > 0) {
 		ke_timer_set(key->repeat_timer, TASK_APP, JWAOO_TOY_KEY_REPEAT_SHORT);
@@ -74,7 +78,13 @@ static int jwaoo_toy_key_long_click_timer(ke_msg_id_t const msgid,
                                          uint8_t *code,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id) {
-	struct jwaoo_toy_key *key = jwaoo_toy_key_get(msgid, JWAOO_TOY_KEY1_LONG_CLICK_TIMER);
+	struct jwaoo_toy_key *key;
+
+	if (app_suspended) {
+		return KE_MSG_CONSUMED;
+	}
+
+	key = jwaoo_toy_key_get(msgid, JWAOO_TOY_KEY1_LONG_CLICK_TIMER);
 
 	jwaoo_toy_process_key_long_click(key);
 
@@ -85,7 +95,13 @@ static int jwaoo_toy_key_multi_click_timer(ke_msg_id_t const msgid,
                                          uint8_t *code,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id) {
-	struct jwaoo_toy_key *key = jwaoo_toy_key_get(msgid, JWAOO_TOY_KEY1_MULTI_CLICK_TIMER);
+	struct jwaoo_toy_key *key;
+
+	if (app_suspended) {
+		return KE_MSG_CONSUMED;
+	}
+
+	key = jwaoo_toy_key_get(msgid, JWAOO_TOY_KEY1_MULTI_CLICK_TIMER);
 
 	jwaoo_toy_process_key_multi_click(key);
 
@@ -266,10 +282,6 @@ enum process_event_response app_jwaoo_toy_process_handler (ke_msg_id_t const msg
 								 ke_task_id_t const src_id, 
 								 enum ke_msg_status_tag *msg_ret)
 {
-	if (app_suspended) {
-		return PR_EVENT_UNHANDLED;
-	}
-
     return (app_std_process_event(msgid, param,src_id,dest_id,msg_ret, app_jwaoo_toy_process_handlers,
                                          sizeof(app_jwaoo_toy_process_handlers)/sizeof(struct ke_msg_handler)));
 } 
