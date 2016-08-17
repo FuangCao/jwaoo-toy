@@ -140,7 +140,8 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 
 	adc_disable();
 
-	voltage = voltage * 1000 / 875;
+	voltage = voltage * 1126 / 1000;
+
 	jwaoo_toy_env.battery_voltage = voltage;
 
 	if (voltage <= BATT_VOLTAGE_MIN) {
