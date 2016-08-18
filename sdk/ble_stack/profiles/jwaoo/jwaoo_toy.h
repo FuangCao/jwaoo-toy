@@ -57,6 +57,7 @@
 #define JWAOO_TOY_MOTO_MODE_MAX			6
 #define JWAOO_TOY_LED1_BLINK_DELAY		5
 #define JWAOO_TOY_LED2_BLINK_DELAY		50
+#define JWAOO_TOY_BATT_ARRAY_SIZE		10
 
 /*
  * ENUMERATIONS
@@ -137,6 +138,7 @@ enum
 	JWAOO_TOY_CMD_FLASH_READ_BD_ADDR,
 	JWAOO_TOY_CMD_FLASH_WRITE_BD_ADDR,
 	JWAOO_TOY_CMD_FACTORY_ENABLE = 50,
+	JWAOO_TOY_CMD_LED_ENABLE,
 	JWAOO_TOY_CMD_BATT_INFO = 60,
 	JWAOO_TOY_CMD_BATT_EVENT_ENABLE,
 	JWAOO_TOY_CMD_SENSOR_ENABLE = 70,
@@ -171,8 +173,8 @@ enum
 {
 	JWAOO_TOY_BATTERY_NORMAL,
 	JWAOO_TOY_BATTERY_LOW,
-	JWAOO_TOY_BATTERY_FULL,
 	JWAOO_TOY_BATTERY_CHARGING,
+	JWAOO_TOY_BATTERY_FULL,
 };
 
 #pragma pack(1)
@@ -213,6 +215,11 @@ struct jwaoo_toy_command
 			uint8_t mode;
 			uint8_t level;
 		} moto;
+
+		struct {
+			uint8_t index;
+			uint8_t enable;
+		} led;
 
 		struct {
 			uint8_t state;
@@ -324,6 +331,9 @@ struct jwaoo_toy_env_tag
 	uint8_t battery_state;
 	uint8_t battery_level;
 	uint16_t battery_voltage;
+	uint16_t battery_voltages[JWAOO_TOY_BATT_ARRAY_SIZE];
+	uint8_t battery_voltage_head;
+	uint8_t battery_voltage_count;
 
 	bool factory_enable;
 };

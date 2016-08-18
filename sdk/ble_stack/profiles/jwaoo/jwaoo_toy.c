@@ -384,6 +384,25 @@ bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t speed)
 	return true;
 }
 
+void jwaoo_toy_set_factory_enable(bool enable)
+{
+	if (jwaoo_toy_env.factory_enable == enable) {
+		return;
+	}
+
+	if (enable) {
+		jwaoo_toy_env.factory_enable = true;
+
+		jwaoo_toy_env.battery_led_locked = 3;
+		jwaoo_led_close(&jwaoo_pwm_led1);
+	} else {
+		jwaoo_toy_env.factory_enable = false;
+
+		jwaoo_toy_env.battery_led_locked = 0;
+		jwaoo_toy_battery_led_update_state();
+	}
+}
+
 // ===============================================================================
 
 void jwaoo_toy_init(void)
@@ -436,6 +455,7 @@ void jwaoo_toy_disable(uint16_t conhdl)
 	jwaoo_toy_env.flash_write_enable = false;
 	jwaoo_toy_env.flash_write_success = false;
 	jwaoo_toy_sensor_set_enable(false);
+	jwaoo_toy_set_factory_enable(false);
 
     //Disable JWAOO_TOY in database
     attmdb_svc_set_permission(jwaoo_toy_env.handle, PERM(SVC, DISABLE));
@@ -689,16 +709,30 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		break;
 
 	case JWAOO_TOY_CMD_FACTORY_ENABLE:
-		if (length > 1 && command->enable.value) {
-			jwaoo_toy_env.factory_enable = true;
-			jwaoo_toy_env.key_locked = false;
-			jwaoo_toy_env.key_click_enable = false;
-			jwaoo_toy_env.key_long_click_enable = false;
-			jwaoo_toy_env.key_multi_click_enable = false;
-		} else {
-			jwaoo_toy_env.factory_enable = false;
-		}
+		jwaoo_toy_set_factory_enable(length > 1 && command->enable.value);
 		success = true;
+		break;
+
+	case JWAOO_TOY_CMD_LED_ENABLE:
+		if (length >= 2) {
+			struct jwaoo_pwm_device *device;
+
+			if (command->led.index == 1) {
+				device = &jwaoo_pwm_led1;
+			} else if (command->led.index == 2) {
+				device = &jwaoo_pwm_led2;
+			} else {
+				break;
+			}
+
+			if (length > 2 && command->led.enable > 0) {
+				jwaoo_led_open(device);
+			} else {
+				jwaoo_led_close(device);
+			}
+
+			success = true;
+		}
 		break;
 
 	case JWAOO_TOY_CMD_BATT_EVENT_ENABLE:
@@ -1103,13 +1137,7 @@ static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 {
 	println("clicked%d: value = %d, count = %d, repeat = %d", key->code, key->value, key->count, key->repeat);
 
-	if (jwaoo_toy_env.factory_enable || jwaoo_toy_env.flash_upgrade) {
-		return;
-	}
-
-	if (key->repeat > 0) {
-		jwaoo_toy_battery_led_blink();
-	}
+	jwaoo_toy_battery_led_blink();
 
 	switch (key->code) {
 	case JWAOO_TOY_KEYCODE_UP:
@@ -1178,6 +1206,12 @@ void jwaoo_toy_process_key_long_click(struct jwaoo_toy_key *key)
 	}
 }
 
+static void jwaoo_toy_key_timer_clear(struct jwaoo_toy_key *key) {
+	ke_timer_clear(key->repeat_timer, TASK_APP);
+	ke_timer_clear(key->long_click_timer, TASK_APP);
+	ke_timer_clear(key->multi_click_timer, TASK_APP);
+}
+
 bool jwaoo_toy_process_key_lock(void)
 {
 	struct jwaoo_toy_key *key;
@@ -1202,9 +1236,7 @@ bool jwaoo_toy_process_key_lock(void)
 	jwaoo_toy_env.key_lock_pending = true;
 
 	for (key = jwaoo_toy_keys; key < key_end; key++) {
-		ke_timer_clear(key->repeat_timer, TASK_APP);
-		ke_timer_clear(key->long_click_timer, TASK_APP);
-		ke_timer_clear(key->multi_click_timer, TASK_APP);
+		jwaoo_toy_key_timer_clear(key);
 
 		if (key->lock_enable) {
 			key->skip = 1;
@@ -1228,13 +1260,24 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 {
 	struct jwaoo_toy_key *key = jwaoo_toy_keys + index;
 
+	// println("%d. code = %d, value = %d", index, key->code, value);
+
+	jwaoo_toy_key_timer_clear(key);
+
 	if (value == 0) {
 		key->last_value = key->value;
 	}
 
 	key->value = value;
 
-	// println("%d. code = %d, value = %d", index, key->code, value);
+	if (jwaoo_toy_env.flash_upgrade) {
+		return;
+	}
+
+	if (jwaoo_toy_env.factory_enable) {
+		jwaoo_toy_report_key_state(key, value);
+		return;
+	}
 
 	if (app_suspended) {
 		if (key->code == JWAOO_TOY_KEYCODE_UP) {
@@ -1251,10 +1294,6 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 		return;
 	}
 
-	ke_timer_clear(key->repeat_timer, TASK_APP);
-	ke_timer_clear(key->long_click_timer, TASK_APP);
-	ke_timer_clear(key->multi_click_timer, TASK_APP);
-
 	if (jwaoo_toy_env.key_locked) {
 		return;
 	}
@@ -1268,8 +1307,6 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 	}
 
 	if (value > 0) {
-		jwaoo_toy_battery_led_blink();
-
 		key->count++;
 		key->repeat = 0;
 		ke_timer_set(key->repeat_timer, TASK_APP, JWAOO_TOY_KEY_REPEAT_LONG);

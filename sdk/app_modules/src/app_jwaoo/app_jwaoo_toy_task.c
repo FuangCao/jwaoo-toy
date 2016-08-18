@@ -140,7 +140,49 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 
 	adc_disable();
 
+	println("raw voltage = %d", voltage);
+
 	voltage = voltage * 1126 / 1000;
+
+	bool charging = (CHG_STAT_GPIO_GET == 0);
+
+	if (charging && voltage < 4220 && jwaoo_toy_env.battery_state != JWAOO_TOY_BATTERY_FULL) {
+		uint8_t percent;
+
+		if (voltage < 4100) {
+			percent = 96;
+		} else if (voltage < 4200) {
+			percent = 97;
+		} else if (voltage < 4210) {
+			percent = 98;
+		} else {
+			percent = 99;
+		}
+
+		voltage = voltage * percent / 100;
+	}
+
+	println("fix voltage = %d", voltage);
+
+	if (++jwaoo_toy_env.battery_voltage_head >= JWAOO_TOY_BATT_ARRAY_SIZE) {
+		jwaoo_toy_env.battery_voltage_head = 0;
+	}
+
+	jwaoo_toy_env.battery_voltages[jwaoo_toy_env.battery_voltage_head] = voltage;
+
+	if (jwaoo_toy_env.battery_voltage_count < JWAOO_TOY_BATT_ARRAY_SIZE) {
+		jwaoo_toy_env.battery_voltage_count++;
+	} else {
+		int i;
+
+		for (i = 0, voltage = 0; i < JWAOO_TOY_BATT_ARRAY_SIZE; i++) {
+			voltage += jwaoo_toy_env.battery_voltages[i];
+		}
+
+		voltage /= JWAOO_TOY_BATT_ARRAY_SIZE;
+
+		println("avg voltage = %d", voltage);
+	}
 
 	jwaoo_toy_env.battery_voltage = voltage;
 
@@ -152,17 +194,12 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		level = (voltage - BATT_VOLTAGE_MIN) * 100 / (BATT_VOLTAGE_MAX - BATT_VOLTAGE_MIN);
 	}
 
-	if (CHG_STAT_GPIO_GET == 0) {
+	if (charging) {
 		if (level < 100) {
 			state = JWAOO_TOY_BATTERY_CHARGING;
 		} else {
 			state = JWAOO_TOY_BATTERY_FULL;
 		}
-#ifdef CHG_DET_GPIO_GET
-	} else if (CHG_DET_GPIO_GET) {
-		level = 100;
-		state = JWAOO_TOY_BATTERY_FULL;
-#endif
 	} else if (level > BATT_LEVEL_LOW) {
 		state = JWAOO_TOY_BATTERY_NORMAL;
 	} else {
@@ -237,6 +274,10 @@ static int jwaoo_toy_moto_blink_handler(ke_msg_id_t const msgid,
                                          ke_task_id_t const dest_id,
                                          ke_task_id_t const src_id)
 {
+	if (jwaoo_toy_env.factory_enable) {
+		return KE_MSG_CONSUMED;
+	}
+
 	if (jwaoo_toy_env.moto_mode == 6) {
 		jwaoo_moto_set_speed((rand() % MOTO_SPEED_MAX) + 1);
 		ke_timer_set(msgid, dest_id, (rand() & 0x3F) + 1);

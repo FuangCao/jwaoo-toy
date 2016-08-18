@@ -103,9 +103,22 @@ bool user_app_set_suspend(bool enable, bool force)
 		return true;
 	}
 
+	if (jwaoo_toy_env.flash_upgrade || jwaoo_toy_env.factory_enable) {
+		return false;
+	}
+
 	app_suspended = enable;
 
 	if (enable) {
+		if (jwaoo_pwm_moto.level > 0) {
+			if (force) {
+				jwaoo_moto_close();
+			} else {
+				app_suspended = false;
+				return false;
+			}
+		}
+
 		if (ke_state_get(TASK_APP) == APP_CONNECTED) {
 			if (force) {
 				app_easy_gap_disconnect(app_connection_idx);
