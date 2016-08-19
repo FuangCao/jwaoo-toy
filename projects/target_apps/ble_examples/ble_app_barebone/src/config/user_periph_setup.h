@@ -153,6 +153,13 @@
 #define CHG_STAT_CONFIG 		GPIO_ConfigurePin(CHG_STAT_GPIO_PORT, CHG_STAT_GPIO_PIN, INPUT, PID_GPIO, true)
 #define CHG_STAT_GPIO_GET		GPIO_GetPinStatus(CHG_STAT_GPIO_PORT, CHG_STAT_GPIO_PIN)
 
+#define LDO_P3V3_GPIO_PORT		GPIO_PORT_0
+#define LDO_P3V3_GPIO_PIN		GPIO_PIN_2
+#define LDO_P3V3_RESERVE		RESERVE_GPIO(LDO_P3V3, LDO_P3V3_GPIO_PORT, LDO_P3V3_GPIO_PIN, PID_GPIO)
+#define LDO_P3V3_CONFIG 		GPIO_ConfigurePin(LDO_P3V3_GPIO_PORT, LDO_P3V3_GPIO_PIN, OUTPUT, PID_GPIO, true)
+#define LDO_P3V3_OPEN			GPIO_SetActive(LDO_P3V3_GPIO_PORT, LDO_P3V3_GPIO_PIN)
+#define LDO_P3V3_CLOSE			GPIO_SetInactive(LDO_P3V3_GPIO_PORT, LDO_P3V3_GPIO_PIN)
+
 /****************************************************************************************/
 /* i2c eeprom configuration                                                             */
 /****************************************************************************************/

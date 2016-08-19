@@ -200,17 +200,24 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		} else {
 			state = JWAOO_TOY_BATTERY_FULL;
 		}
-	} else if (level > BATT_LEVEL_LOW) {
-		state = JWAOO_TOY_BATTERY_NORMAL;
+
+		ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
 	} else {
-		state = JWAOO_TOY_BATTERY_LOW;
+		if (level > BATT_LEVEL_LOW) {
+			state = JWAOO_TOY_BATTERY_NORMAL;
+		} else {
+			state = JWAOO_TOY_BATTERY_LOW;
+		}
+
+		if (!app_suspended) {
+			ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
+		}
 	}
 
 	jwaoo_toy_env.battery_level = level;
 	jwaoo_toy_battery_set_state(state);
 
 	ke_timer_set(JWAOO_TOY_BATT_REPORT_STATE, TASK_JWAOO_TOY, 1);
-	ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
 
     return (KE_MSG_CONSUMED);
 }

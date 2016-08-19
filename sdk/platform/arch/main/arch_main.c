@@ -156,6 +156,20 @@ extern bool fine_hit;
  * It contains the main function loop.
  ****************************************************************************************
  */
+static void arch_wait_for_interrupt(void)
+{
+#if USE_WDOG
+	wdg_freeze();
+#endif
+
+	//wait for an interrupt to resume operation
+	WFI();
+
+#if USE_WDOG
+	wdg_resume();
+#endif
+}
+
 int main_func(void) __attribute__((noreturn));
 
 int main_func(void)
@@ -198,7 +212,8 @@ int main_func(void)
             	arch_goto_sleep(sleep_mode);
 
             	//wait for an interrupt to resume operation
-                WFI();
+                // WFI();
+				arch_wait_for_interrupt();
 
                 //resume operation
                 arch_resume_from_sleep();
@@ -208,7 +223,8 @@ int main_func(void)
             	if (((!BLE_APP_PRESENT) && check_gtl_state()) ||
             		(BLE_APP_PRESENT))
             		//wait for an interrupt to resume operation
-                    WFI();    
+                    // WFI();
+                    arch_wait_for_interrupt();
             }
             // restore interrupts
             GLOBAL_INT_START();

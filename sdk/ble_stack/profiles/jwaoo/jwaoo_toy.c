@@ -146,17 +146,32 @@ uint8_t jwaoo_toy_sensor_poll(void)
 	return jwaoo_toy_send_notify(JWAOO_TOY_ATTR_SENSOR_DATA, buff, 3 + FDC1004_DATA_BYTES);
 }
 
+static bool jwaoo_toy_sensor_set_enable_retry(bool (*handler)(bool enable))
+{
+	int i;
+
+	for (i = 10; i > 0; i--) {
+		if (handler(true)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool jwaoo_toy_sensor_set_enable(bool enable)
 {
 	println("sensor_enable = %d, sensor_poll_delay = %d", enable, jwaoo_toy_env.sensor_poll_delay);
 
 	if (enable) {
+		LDO_P3V3_OPEN;
+
 		if (jwaoo_toy_accel_sensor_set_enable) {
-			jwaoo_toy_accel_sensor_set_enable(true);
-		} else if (bmi160_set_enable(true)) {
+			jwaoo_toy_sensor_set_enable_retry(jwaoo_toy_accel_sensor_set_enable);
+		} else if (jwaoo_toy_sensor_set_enable_retry(bmi160_set_enable)) {
 			jwaoo_toy_accel_sensor_set_enable = bmi160_set_enable;
 			jwaoo_toy_accel_sensor_read_values = bmi160_read_sensor_values;
-		} else if (mpu6050_set_enable(true)) {
+		} else if (jwaoo_toy_sensor_set_enable_retry(mpu6050_set_enable)) {
 			jwaoo_toy_accel_sensor_set_enable = mpu6050_set_enable;
 			jwaoo_toy_accel_sensor_read_values = mpu6050_read_sensor_values;
 		} else {
@@ -164,9 +179,9 @@ bool jwaoo_toy_sensor_set_enable(bool enable)
 		}
 
 		if (jwaoo_toy_capacity_sensor_set_enable) {
-			jwaoo_toy_capacity_sensor_set_enable(true);
-		} else if (fdc1004_set_enable(true)) {
-			jwaoo_toy_capacity_sensor_set_enable = bmi160_set_enable;
+			jwaoo_toy_sensor_set_enable_retry(jwaoo_toy_capacity_sensor_set_enable);
+		} else if (jwaoo_toy_sensor_set_enable_retry(fdc1004_set_enable)) {
+			jwaoo_toy_capacity_sensor_set_enable = fdc1004_set_enable;
 			jwaoo_toy_capacity_sensor_read_values = fdc1004_read_sensor_values;
 		} else {
 			jwaoo_toy_capacity_sensor_read_values = jwaoo_toy_sensor_read_values_dummy;
@@ -181,6 +196,7 @@ bool jwaoo_toy_sensor_set_enable(bool enable)
 		jwaoo_toy_env.sensor_poll_enable = false;
 		ke_timer_clear(JWAOO_TOY_SENSOR_POLL, TASK_JWAOO_TOY);
 
+#if 0
 		if (jwaoo_toy_capacity_sensor_set_enable) {
 			jwaoo_toy_capacity_sensor_set_enable(false);
 		}
@@ -188,6 +204,9 @@ bool jwaoo_toy_sensor_set_enable(bool enable)
 		if (jwaoo_toy_accel_sensor_set_enable) {
 			jwaoo_toy_accel_sensor_set_enable(false);
 		}
+#endif
+
+		LDO_P3V3_CLOSE;
 	}
 
 	return true;
@@ -278,7 +297,7 @@ bool jwaoo_toy_flash_check_crc(uint32_t addr, uint32_t size, uint8_t crc_raw)
 	return true;
 }
 
-bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw)
+static bool jwaoo_toy_flash_copy_safe(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw)
 {
 	uint8_t crc_read = 0xFF;
 	uint8_t crc_write = 0xFF;
@@ -339,6 +358,23 @@ bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8
 	println("%s successfull", __FUNCTION__);
 
 	return true;
+}
+
+bool jwaoo_toy_flash_copy(uint32_t rdaddr, uint32_t wraddr, uint32_t size, uint8_t crc_raw)
+{
+	bool success;
+
+#if USE_WDOG
+	wdg_freeze();
+#endif
+
+	success = jwaoo_toy_flash_copy_safe(rdaddr, wraddr, size, crc_raw);
+
+#if USE_WDOG
+	wdg_resume();
+#endif
+
+	return success;
 }
 
 bool jwaoo_toy_moto_set_mode(uint8_t mode, uint8_t speed)

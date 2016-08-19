@@ -135,6 +135,8 @@ bool user_app_set_suspend(bool enable, bool force)
 			app_easy_timer_cancel(app_suspend_timer_used);
 			app_suspend_timer_used = EASY_TIMER_INVALID_TIMER;
 		}
+
+		LDO_P3V3_CLOSE;
 	} else {
 		user_app_adv_start();
 	}
