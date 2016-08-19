@@ -37,7 +37,7 @@
 #include "app_jwaoo_toy_task.h"       // Device Information Service Application Task API
 #include "app_task.h"           // Application Task API
 #include "user_periph_setup.h"
-
+#include "user_barebone.h"
 
 /*
  * FUNCTION DEFINITIONS
@@ -144,9 +144,7 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 
 	voltage = voltage * 1126 / 1000;
 
-	bool charging = (CHG_STAT_GPIO_GET == 0);
-
-	if (charging && voltage < 4226 && jwaoo_toy_env.battery_state != JWAOO_TOY_BATTERY_FULL) {
+	if (jwaoo_toy_env.charge_online && voltage < 4226 && jwaoo_toy_env.battery_state != JWAOO_TOY_BATTERY_FULL) {
 		uint8_t percent;
 
 		if (voltage < 4100) {
@@ -192,7 +190,7 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		level = (voltage - BATT_VOLTAGE_MIN) * 100 / (BATT_VOLTAGE_MAX - BATT_VOLTAGE_MIN);
 	}
 
-	if (charging) {
+	if (jwaoo_toy_env.charge_online) {
 		if (level < 100) {
 			state = JWAOO_TOY_BATTERY_CHARGING;
 		} else {
@@ -208,7 +206,7 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		}
 
 		if (app_suspended) {
-			// ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 200);
+			user_app_set_deep_sleep_enable(true);
 		} else {
 			ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
 		}

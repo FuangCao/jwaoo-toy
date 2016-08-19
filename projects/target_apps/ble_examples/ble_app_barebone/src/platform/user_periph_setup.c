@@ -388,23 +388,17 @@ static void app_spi_flash_init(void)
 	}
 }
 
-static uint8_t app_process_key(IRQn_Type irq, uint8_t code, GPIO_PORT port, GPIO_PIN pin)
+static void app_process_key(IRQn_Type irq, uint8_t code, GPIO_PORT port, GPIO_PIN pin)
 {
-	uint8_t value;
-	GPIO_IRQ_INPUT_LEVEL level;
+	bool status = GPIO_GetPinStatus(port, pin);
 
-	if (GPIO_GetPinStatus(port, pin)) {
-		value = !KEY_ACTIVE_LOW;
-		level = GPIO_IRQ_INPUT_LEVEL_LOW;
-	} else {
-		value = KEY_ACTIVE_LOW;
-		level = GPIO_IRQ_INPUT_LEVEL_HIGH;
-	}
+	GPIO_SetIRQInputLevel(irq, (GPIO_IRQ_INPUT_LEVEL) status);
 
-	GPIO_SetIRQInputLevel(irq, level);
-	jwaoo_toy_process_key(code, value);
-
-	return value;
+#if KEY_ACTIVE_LOW
+	jwaoo_toy_process_key(code, !status);
+#else
+	jwaoo_toy_process_key(code, status);
+#endif
 }
 
 static void app_config_key(IRQn_Type irq, GPIO_handler_function_t isr, GPIO_PORT port, GPIO_PIN pin)
@@ -433,6 +427,14 @@ static void app_key3_isr(void)
 static void app_key4_isr(void)
 {
 	app_process_key(KEY4_GPIO_IRQ, 3, KEY4_GPIO_PORT, KEY4_GPIO_PIN);
+}
+
+static void app_charge_isr(void)
+{
+	bool status = GPIO_GetPinStatus(CHG_STAT_GPIO_PORT, CHG_STAT_GPIO_PIN);
+
+	GPIO_SetIRQInputLevel(CHG_STAT_GPIO_IRQ, (GPIO_IRQ_INPUT_LEVEL) status);
+	jwaoo_toy_on_charge_state_changed(!status);
 }
 
 void periph_init(void)
@@ -464,6 +466,10 @@ void periph_init(void)
 	app_config_key(KEY3_GPIO_IRQ, app_key3_isr, KEY3_GPIO_PORT, KEY3_GPIO_PIN);
 #endif
 	app_config_key(KEY4_GPIO_IRQ, app_key4_isr, KEY4_GPIO_PORT, KEY4_GPIO_PIN);
+
+#ifdef CHG_STAT_GPIO_IRQ
+	app_config_key(CHG_STAT_GPIO_IRQ, app_charge_isr, CHG_STAT_GPIO_PORT, CHG_STAT_GPIO_PIN);
+#endif
 
 	set_tmr_enable(CLK_PER_REG_TMR_ENABLED);
 	// set_tmr_div(CLK_PER_REG_TMR_DIV_8);

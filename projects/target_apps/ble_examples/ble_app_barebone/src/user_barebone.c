@@ -84,7 +84,7 @@ static void user_app_suspend_timer_cb()
 		app_suspend_remain--;
 	} else {
 		app_suspend_timer_used = EASY_TIMER_INVALID_TIMER;
-		user_app_set_suspend(true, false);
+		user_app_set_suspend_enable(true, false);
 	}
 }
 
@@ -97,7 +97,20 @@ void user_app_update_suspend_timer(void)
 	}
 }
 
-bool user_app_set_suspend(bool enable, bool force)
+void user_app_set_deep_sleep_enable(bool enable)
+{
+	if (enable) {
+		jwaoo_toy_env.battery_voltage_head = 0;
+		jwaoo_toy_env.battery_voltage_count = 0;
+
+		arch_set_sleep_mode(ARCH_EXT_SLEEP_ON);
+	} else {
+		arch_set_sleep_mode(ARCH_SLEEP_OFF);
+		arch_ble_force_wakeup();
+	}
+}
+
+bool user_app_set_suspend_enable(bool enable, bool force)
 {
 	if (app_suspended == enable) {
 		return true;
@@ -137,13 +150,8 @@ bool user_app_set_suspend(bool enable, bool force)
 		}
 
 		LDO_P3V3_CLOSE;
-		arch_set_sleep_mode(ARCH_DEEP_SLEEP_ON);
 	} else {
-		arch_set_sleep_mode(ARCH_SLEEP_OFF);
-
-		// jwaoo_toy_env.battery_voltage_head = 0;
-		// jwaoo_toy_env.battery_voltage_count = 0;
-
+		user_app_set_deep_sleep_enable(false);
 		user_app_adv_start();
 	}
 

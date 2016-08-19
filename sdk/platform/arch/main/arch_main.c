@@ -257,7 +257,7 @@ static inline void arch_goto_sleep (sleep_mode_t current_sleep_mode)
     app_sleep_prepare_proc(&sleep_mode);    //SDK Improvements for uniformity this one should be changed?
 
 	//turn the peripherals off according to the current sleep mode
-	arch_turn_peripherals_off(sleep_mode);
+	// arch_turn_peripherals_off(sleep_mode);
 
 	#if (USE_POWER_OPTIMIZATIONS)
 		fine_hit = false;

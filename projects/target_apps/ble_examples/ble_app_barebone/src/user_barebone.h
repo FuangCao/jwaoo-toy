@@ -73,7 +73,8 @@
  ****************************************************************************************
  */
 
-bool user_app_set_suspend(bool enable, bool force);
+void user_app_set_deep_sleep_enable(bool enable);
+bool user_app_set_suspend_enable(bool enable, bool force);
 void user_app_update_suspend_timer(void);
 
 /**

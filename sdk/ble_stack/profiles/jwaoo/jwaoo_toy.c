@@ -1098,6 +1098,17 @@ void jwaoo_toy_battery_set_state(uint8_t state)
 	}
 }
 
+void jwaoo_toy_on_charge_state_changed(bool online)
+{
+	user_app_set_deep_sleep_enable(false);
+
+	println("charge online = %d", online);
+
+	ke_timer_clear(JWAOO_TOY_BATT_POLL, TASK_APP);
+	jwaoo_toy_env.charge_online = online;
+	ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 1);
+}
+
 // ================================================================================
 
 static void jwaoo_toy_report_key_state(struct jwaoo_toy_key *key, uint8_t value)
@@ -1182,7 +1193,7 @@ static void jwaoo_toy_on_key_clicked(struct jwaoo_toy_key *key, uint8_t count)
 
 	case JWAOO_TOY_KEYCODE_DOWN:
 		if (jwaoo_toy_moto_speed_sub() == 0 && key->repeat > 0) {
-			user_app_set_suspend(true, true);
+			user_app_set_suspend_enable(true, true);
 		}
 		break;
 
@@ -1318,7 +1329,7 @@ void jwaoo_toy_process_key(uint8_t index, uint8_t value)
 	if (app_suspended) {
 		if (key->code == JWAOO_TOY_KEYCODE_UP) {
 			key->skip = 1;
-			user_app_set_suspend(false, true);
+			user_app_set_suspend_enable(false, true);
 		}
 
 		return;

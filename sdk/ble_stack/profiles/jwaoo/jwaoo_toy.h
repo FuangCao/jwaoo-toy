@@ -326,6 +326,7 @@ struct jwaoo_toy_env_tag
 
 	uint8_t moto_mode;
 
+	bool charge_online;
 	bool battery_report;
 	uint8_t battery_led_locked;
 	uint8_t battery_state;
@@ -383,6 +384,7 @@ void jwaoo_toy_battery_led_blink(void);
 void jwaoo_toy_battery_led_release(void);
 void jwaoo_toy_battery_led_update_state(void);
 void jwaoo_toy_battery_set_state(uint8_t state);
+void jwaoo_toy_on_charge_state_changed(bool online);
 
 bool jwaoo_toy_read_device_data(void);
 uint8_t jwaoo_toy_write_data(uint16_t attr, const void *data, int size);
