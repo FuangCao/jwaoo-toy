@@ -146,7 +146,7 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 
 	bool charging = (CHG_STAT_GPIO_GET == 0);
 
-	if (charging && voltage < 4220 && jwaoo_toy_env.battery_state != JWAOO_TOY_BATTERY_FULL) {
+	if (charging && voltage < 4226 && jwaoo_toy_env.battery_state != JWAOO_TOY_BATTERY_FULL) {
 		uint8_t percent;
 
 		if (voltage < 4100) {
@@ -160,29 +160,27 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		}
 
 		voltage = voltage * percent / 100;
+		if (voltage < jwaoo_toy_env.battery_voltage) {
+			voltage = jwaoo_toy_env.battery_voltage;
+		}
 	}
 
 	println("fix voltage = %d", voltage);
 
-	if (++jwaoo_toy_env.battery_voltage_head >= JWAOO_TOY_BATT_ARRAY_SIZE) {
-		jwaoo_toy_env.battery_voltage_head = 0;
-	}
-
 	jwaoo_toy_env.battery_voltages[jwaoo_toy_env.battery_voltage_head] = voltage;
+	jwaoo_toy_env.battery_voltage_head = (jwaoo_toy_env.battery_voltage_head + 1) % JWAOO_TOY_BATT_ARRAY_SIZE;
 
 	if (jwaoo_toy_env.battery_voltage_count < JWAOO_TOY_BATT_ARRAY_SIZE) {
 		jwaoo_toy_env.battery_voltage_count++;
-	} else {
-		int i;
-
-		for (i = 0, voltage = 0; i < JWAOO_TOY_BATT_ARRAY_SIZE; i++) {
-			voltage += jwaoo_toy_env.battery_voltages[i];
-		}
-
-		voltage /= JWAOO_TOY_BATT_ARRAY_SIZE;
-
-		println("avg voltage = %d", voltage);
 	}
+
+	for (i = jwaoo_toy_env.battery_voltage_count - 1, voltage = 0; i >= 0; i--) {
+		voltage += jwaoo_toy_env.battery_voltages[i];
+	}
+
+	voltage /= jwaoo_toy_env.battery_voltage_count;
+
+	println("avg voltage = %d", voltage);
 
 	jwaoo_toy_env.battery_voltage = voltage;
 
@@ -209,7 +207,9 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 			state = JWAOO_TOY_BATTERY_LOW;
 		}
 
-		if (!app_suspended) {
+		if (app_suspended) {
+			ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 200);
+		} else {
 			ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
 		}
 	}
