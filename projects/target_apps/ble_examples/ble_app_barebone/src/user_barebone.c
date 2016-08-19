@@ -137,7 +137,10 @@ bool user_app_set_suspend(bool enable, bool force)
 		}
 
 		LDO_P3V3_CLOSE;
+		arch_set_sleep_mode(ARCH_DEEP_SLEEP_ON);
 	} else {
+		arch_set_sleep_mode(ARCH_SLEEP_OFF);
+
 		// jwaoo_toy_env.battery_voltage_head = 0;
 		// jwaoo_toy_env.battery_voltage_count = 0;
 

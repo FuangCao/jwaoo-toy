@@ -462,8 +462,8 @@ if (current_sleep_mode == mode_ext_sleep || current_sleep_mode == mode_deep_slee
 {
 	SCB->SCR |= 1<<2; // enable deep sleep  mode bit in System Control Register (SCR[2]=SLEEPDEEP)
 
-    SetBits16(SYS_CTRL_REG, PAD_LATCH_EN, 0);           // activate PAD latches
-    SetBits16(PMU_CTRL_REG, PERIPH_SLEEP, 1);           // turn off peripheral power domain
+    // SetBits16(SYS_CTRL_REG, PAD_LATCH_EN, 0);           // activate PAD latches
+    // SetBits16(PMU_CTRL_REG, PERIPH_SLEEP, 1);           // turn off peripheral power domain
     if (current_sleep_mode == mode_ext_sleep)	{
             SetBits16(SYS_CTRL_REG, RET_SYSRAM, 1);         // retain System RAM
             SetBits16(SYS_CTRL_REG, OTP_COPY, 0);           // disable OTP copy

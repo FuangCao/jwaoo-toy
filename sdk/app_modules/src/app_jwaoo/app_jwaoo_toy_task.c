@@ -208,7 +208,7 @@ static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
 		}
 
 		if (app_suspended) {
-			ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 200);
+			// ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 200);
 		} else {
 			ke_timer_set(JWAOO_TOY_BATT_POLL, TASK_APP, 100);
 		}
