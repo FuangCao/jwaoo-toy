@@ -103,9 +103,11 @@ void user_app_set_deep_sleep_enable(bool enable)
 		jwaoo_toy_env.battery_voltage_head = 0;
 		jwaoo_toy_env.battery_voltage_count = 0;
 
+		arch_ble_ext_wakeup_on();
 		arch_set_sleep_mode(ARCH_EXT_SLEEP_ON);
 	} else {
 		arch_set_sleep_mode(ARCH_SLEEP_OFF);
+		arch_ble_ext_wakeup_off();
 		arch_ble_force_wakeup();
 	}
 }

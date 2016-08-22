@@ -706,6 +706,12 @@ void jwaoo_toy_process_command(const struct jwaoo_toy_command *command, uint16_t
 		break;
 
 	case JWAOO_TOY_CMD_SHUTDOWN:
+		if (jwaoo_toy_env.flash_upgrade) {
+			break;
+		}
+
+		ke_timer_set(JWAOO_TOY_SHUTDOWN, TASK_APP, 100);
+		success = true;
 		break;
 
 	case JWAOO_TOY_CMD_I2C_RW:

@@ -118,6 +118,16 @@ static int jwaoo_toy_reboot_handler(ke_msg_id_t const msgid,
     return (KE_MSG_CONSUMED);
 }
 
+static int jwaoo_toy_shutdown_handler(ke_msg_id_t const msgid,
+                                         void *param,
+                                         ke_task_id_t const dest_id,
+                                         ke_task_id_t const src_id)
+{
+	user_app_set_suspend_enable(true, true);
+
+    return (KE_MSG_CONSUMED);
+}
+
 static int jwaoo_toy_battery_poll_handler(ke_msg_id_t const msgid,
                                          void *param,
                                          ke_task_id_t const dest_id,
@@ -299,6 +309,7 @@ static const struct ke_msg_handler app_jwaoo_toy_process_handlers[]=
     { JWAOO_TOY_DISABLE_IND,				(ke_msg_func_t) jwaoo_toy_disable_ind_handler }, 
 
 	{ JWAOO_TOY_REBOOT, 					(ke_msg_func_t) jwaoo_toy_reboot_handler },
+	{ JWAOO_TOY_SHUTDOWN, 					(ke_msg_func_t) jwaoo_toy_shutdown_handler },
 	{ JWAOO_TOY_BATT_POLL, 					(ke_msg_func_t) jwaoo_toy_battery_poll_handler },
 	{ JWAOO_TOY_KEY_LOCK, 					(ke_msg_func_t) jwaoo_toy_key_lock_handler },
 	{ JWAOO_TOY_LED1_BLINK, 				(ke_msg_func_t) jwaoo_toy_led1_blink_handler },

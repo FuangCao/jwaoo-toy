@@ -64,6 +64,7 @@ enum
     ///Set the value of an attribute
 
 	JWAOO_TOY_REBOOT,
+	JWAOO_TOY_SHUTDOWN,
 	JWAOO_TOY_KEY_LOCK,
 	JWAOO_TOY_BATT_POLL,
 	JWAOO_TOY_LED1_BLINK,

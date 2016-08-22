@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Fri Aug 19 21:57:14 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Aug 22 14:32:22 2016
 ;VERSION 0.2
 ;FILE adc.o
 ;FILE app.o
@@ -66,8 +66,6 @@ gapc_encrypt_req_ind_handler <= USED 0
 ;FILE arch_main.o
 ;FILE arch_patch.o
 ;FILE arch_sleep.o
-arch_ble_ext_wakeup_off <= USED 0
-arch_ble_ext_wakeup_on <= USED 0
 arch_force_active_mode <= USED 0
 arch_last_rwble_evt_get <= USED 0
 arch_restore_sleep_mode <= USED 0
