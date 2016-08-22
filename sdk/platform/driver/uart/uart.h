@@ -73,8 +73,12 @@
 #define UART_CHAR_DURATION       (UART_BAUDRATE * 22)
 #endif // (UART_BAUDRATE == UART_BAUDRATE_921K6)
 
+#ifdef CFG_PRINTF_UART2
 #define println(fmt, args ...) \
 	uart2_printf(fmt "\r\n", ##args);
+#else
+#define println(fmt, args ...)
+#endif
 
 #define pr_pos_info() \
 	println("%s[%d]", __FUNCTION__, __LINE__)

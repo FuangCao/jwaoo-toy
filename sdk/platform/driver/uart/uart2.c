@@ -22,6 +22,8 @@
  * INCLUDE FILES
  ****************************************************************************************
  */
+
+#ifdef CFG_PRINTF_UART2
 #include <stdarg.h>
 #include <stddef.h>     // standard definition
 #include "uart.h"       // uart definition
@@ -449,3 +451,4 @@ void UART2_Handler(void)
     }
 }
 /// @} UART
+#endif

@@ -1,4 +1,4 @@
-;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Aug 22 14:32:22 2016
+;#<FEEDBACK># ARM Linker, 5.03 [Build 76]: Last Updated: Mon Aug 22 15:41:57 2016
 ;VERSION 0.2
 ;FILE adc.o
 ;FILE app.o
@@ -160,10 +160,6 @@ spi_read_flash_unique_id <= USED 0
 syscntl_set_dcdc_vbat3v_level <= USED 0
 ;FILE system_armcm0.o
 ;FILE trng.o
-;FILE uart2.o
-uart2_flow_off <= USED 0
-uart2_flow_on <= USED 0
-uart2_read <= USED 0
 ;FILE user_barebone.o
 ;FILE user_periph_setup.o
 ;FILE wkupct_quadec.o

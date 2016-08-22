@@ -76,7 +76,7 @@
 /* controls the uart module used. If it is defined UART2 is used. If not, UART is used. uart or uart2 driver    */
 /* must be included in project respectively.                                                                    */
 /****************************************************************************************************************/
-#define CFG_PRINTF
-#define CFG_PRINTF_UART2
+// #define CFG_PRINTF
+// #define CFG_PRINTF_UART2
 
 #endif // _DA1458X_CONFIG_BASIC_H_
